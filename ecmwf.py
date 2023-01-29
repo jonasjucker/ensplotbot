@@ -34,6 +34,7 @@ class EcmwfApi():
         # populate stations with valid run
         for Station in self._stations:
             Station.base_time = self._latest_confirmed_run(Station)
+            logging.debug('init station {} with base_time {}'.format(Station.name,Station.base_time))
 
 
     def _latest_run(self):
@@ -99,6 +100,10 @@ class EcmwfApi():
         for Station in self._stations:
             if self._new_forecast_available(Station):
                 self._download_plots(Station)
+
+                # update base_time with latest confirmed run
+                # if not updated, bot sends endless plots to users
+                Station.base_time = self._latest_confirmed_run(Station)
 
         # copy because we reset _plots_for_broadcast now
         plots_for_broadcast = self._plots_for_broadcast.copy()
