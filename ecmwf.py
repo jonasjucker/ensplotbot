@@ -116,4 +116,4 @@ class EcmwfApi():
             self._plots_for_broadcast[Station.name] = plots
 
     def _new_forecast_available(self,Station):
-            return Station.base_time == self._latest_confirmed_run(Station)
+            return Station.base_time != self._latest_confirmed_run(Station)
