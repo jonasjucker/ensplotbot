@@ -33,7 +33,7 @@ def main():
 
     while True:
 
-        bot.broadcast('Tschiertschen',ecmwf.download_latest_plots())
+        bot.broadcast(ecmwf.download_latest_plots())
 
         snooze = 3
         logging.debug(f'snooze {snooze}s ...')

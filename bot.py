@@ -31,7 +31,7 @@ class PlotBot:
     def _start(self,update: Update, context: CallbackContext):
         reply_text = "Hi! I am OpenEns. I supply you with the latest ECWMF meteograms. \
                       As soon as the latest forecast is available I deliver them to you. \
-                      Currently only Tschiertschen is available. More to come soon..."
+                      Currently I send you forecasts for Tschiertschen, Davos and Elm."
 
         reply_keyboard = [
             ['/subscribe'],[ '/unsubscribe']
@@ -76,11 +76,13 @@ class PlotBot:
         update.message.reply_text(reply_text)
 
 
-    def broadcast(self,message,plots):
+    def broadcast(self,plots):
         if plots:
-            for user_id in self._dp.bot_data['user_id']:
-                logging.debug(user_id)
-                self._dp.bot.send_message(chat_id=user_id, text=message)
-                for plot in plots:
-                    self._dp.bot.send_photo(chat_id=user_id, photo=open(plot, 'rb'))
+            for station_name in plots:
+                message = station_name
+                for user_id in self._dp.bot_data['user_id']:
+                    logging.debug(user_id)
+                    self._dp.bot.send_message(chat_id=user_id, text=message)
+                    for plot in plots[station_name]:
+                        self._dp.bot.send_photo(chat_id=user_id, photo=open(plot, 'rb'))
             logging.info('plots sent')

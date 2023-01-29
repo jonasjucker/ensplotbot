@@ -8,7 +8,6 @@ import pandas as pd
 d10_plume = 'classical_plume'
 d10_eps = 'classical_10d'
 d15_eps = 'classical_15d'
-#d15_eps_with_climate='classical_15d_with_climate'
 
 class Station():
     def __init__(self,name,lat,lon):
@@ -18,8 +17,9 @@ class Station():
         self.base_time = None
 
 TST = Station(name='Tschiertschen',lat='46.8167',lon='9.6')
-ALL_STATIONS = [TST]
-#ALL_EPSGRAM = [d10_plume,d10_eps,d15_eps,d15_eps_with_climate] 
+DVS = Station(name='Davos',lat='46.8043',lon='9.83723')
+ELM = Station(name='Elm',lat='46.9167',lon='9.16667')
+ALL_STATIONS = [TST,DVS,ELM]
 ALL_EPSGRAM = [d10_plume,d10_eps,d15_eps] 
 
 class EcmwfApi():
@@ -28,6 +28,8 @@ class EcmwfApi():
         self._API_URL = "https://charts.ecmwf.int/opencharts-api/v1/" 
         self._stations = ALL_STATIONS
         self._epsgrams = ALL_EPSGRAM
+
+        self._plots_for_broadcast = {}
 
         # populate stations with valid run
         for Station in self._stations:
@@ -94,12 +96,15 @@ class EcmwfApi():
         return file
 
     def download_latest_plots(self):
-        plots = []
         for Station in self._stations:
             if self._new_forecast_available(Station):
-                plots.extend(self._download_plots(Station))
+                self._download_plots(Station)
 
-        return plots
+        # copy because we reset _plots_for_broadcast now
+        plots_for_broadcast = self._plots_for_broadcast.copy()
+        self._plots_for_broadcast = {}
+
+        return plots_for_broadcast
 
 
     def _download_plots(self,Station):
@@ -108,8 +113,7 @@ class EcmwfApi():
             for type in self._epsgrams:
                 image_api =  self._request_epsgram_link_for_station(Station,type)
                 plots.append(self._save_image_of_station(image_api,Station,type))
-
-            return plots
+            self._plots_for_broadcast[Station.name] = plots
 
     def _new_forecast_available(self,Station):
-            return Station.base_time != self._latest_confirmed_run(Station)
+            return Station.base_time == self._latest_confirmed_run(Station)
