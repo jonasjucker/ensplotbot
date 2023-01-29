@@ -99,11 +99,14 @@ class EcmwfApi():
     def download_latest_plots(self):
         for Station in self._stations:
             if self._new_forecast_available(Station):
-                self._download_plots(Station)
 
                 # update base_time with latest confirmed run
+                # base_time needs update before fetch
                 # if not updated, bot sends endless plots to users
                 Station.base_time = self._latest_confirmed_run(Station)
+
+                self._download_plots(Station)
+
 
         # copy because we reset _plots_for_broadcast now
         plots_for_broadcast = self._plots_for_broadcast.copy()
