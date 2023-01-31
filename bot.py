@@ -33,7 +33,7 @@ class PlotBot:
     def _start(self,update: Update, context: CallbackContext):
         reply_text = "Hi! I am OpenEns. I supply you with the latest ECWMF meteograms. \
                       As soon as the latest forecast is available I deliver them to you. \
-                      Currently I send you forecasts for Tschiertschen, Davos and Elm."
+                      Currently I send you forecasts for Tschiertschen and Davos."
 
         reply_keyboard = [
             ['/subscribe'],[ '/unsubscribe']

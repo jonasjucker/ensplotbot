@@ -37,7 +37,7 @@ def main():
             bot.send_plots_to_new_subscribers(ecmwf.download_plots())
         bot.broadcast(ecmwf.download_latest_plots())
 
-        snooze = 1
+        snooze = 120
         logging.debug(f'snooze {snooze}s ...')
         time.sleep(snooze)
 
