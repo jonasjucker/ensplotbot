@@ -28,6 +28,8 @@ class PlotBot:
         # start the bot
         self.updater.start_polling()
 
+        self._new_users_waiting_for_plots = []
+
     def _start(self,update: Update, context: CallbackContext):
         reply_text = "Hi! I am OpenEns. I supply you with the latest ECWMF meteograms. \
                       As soon as the latest forecast is available I deliver them to you. \
@@ -43,7 +45,7 @@ class PlotBot:
         update.message.reply_text(reply_text, reply_markup=markup)
 
     def _subscribe(self,update: Update, context: CallbackContext):
-        reply_text = "You sucessfully subscribed."
+        reply_text = "You sucessfully subscribed. You will receive your first plots in a minute or two..."
         update.message.reply_text(reply_text)
 
         # add user to subscription list
@@ -52,6 +54,8 @@ class PlotBot:
         context.bot_data['user_id'].add(user_id)
 
         logging.info(context.bot_data.setdefault('user_id', set()))
+
+        self._new_users_waiting_for_plots.append(user_id)
 
     def _unsubscribe(self,update: Update, context: CallbackContext):
         reply_text = "You sucessfully unsubscribed."
@@ -74,6 +78,23 @@ class PlotBot:
 
         reply_text = f"IP-ADDRESS: {ip_address}"
         update.message.reply_text(reply_text)
+
+    def has_new_subscribers_waiting(self):
+        if self._new_users_waiting_for_plots:
+            return True
+        else:
+            return False
+
+    def send_plots_to_new_subscribers(self,plots):
+        for user_id in self._new_users_waiting_for_plots:
+            logging.debug(user_id)
+            for station_name in plots:
+                message = station_name
+                self._dp.bot.send_message(chat_id=user_id, text=message)
+                for plot in plots[station_name]:
+                    self._dp.bot.send_photo(chat_id=user_id, photo=open(plot, 'rb'))
+        logging.info('plots sent')
+        self._new_users_waiting_for_plots = []
 
 
     def broadcast(self,plots):
