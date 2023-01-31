@@ -1,6 +1,7 @@
 import requests
 import json
 import datetime
+import time
 import logging
 
 import pandas as pd
@@ -41,6 +42,12 @@ class EcmwfApi():
         t_now = datetime.datetime.now()
         t_now_rounded = pd.Timestamp.now().round(freq='12H').to_pydatetime()
 
+
+        while ( (datetime.time(11, 59, 0) < datetime.datetime.now().time() < datetime.time(12,1,0)) or \
+                (datetime.time(23, 59, 0) < datetime.datetime.now().time() < datetime.time(0,1,0)) ):
+            time.sleep(10)
+            logging.info('snooze 10s because time close to noon/midnight: {}'.format(datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')))
+
         # rounding ends up in future
         if t_now <= t_now_rounded:
             t_now_rounded = t_now_rounded - datetime.timedelta(hours = 12) 
@@ -48,11 +55,6 @@ class EcmwfApi():
 
 
     def _latest_confirmed_run(self,station):
-        '''
-        Function only works if not called between a transition
-        from 23:59 (last valid run 12:00) and 00:01 (last valid run 00:00).
-        latest_run() then returns two different timestamps what is bad!
-        '''
 
         eps_type = 'classical_plume'
         product = 'opencharts_meteogram'
