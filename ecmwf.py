@@ -38,13 +38,17 @@ class EcmwfApi():
             logging.debug('init station {} with base_time {}'.format(Station.name,Station.base_time))
 
 
+    def _is_dangerous_time(self):
+        # time is dangerous around 11:59 - 12:01  and 23:59 - 00:01
+        return ( (datetime.time(11, 59, 0) < datetime.datetime.now().time() < datetime.time(12,1,0)) or \
+                (datetime.time(23, 59, 0) < datetime.datetime.now().time() < datetime.time(0,1,0)) )
+
     def _latest_run(self):
         t_now = datetime.datetime.now()
         t_now_rounded = pd.Timestamp.now().round(freq='12H').to_pydatetime()
 
 
-        while ( (datetime.time(11, 59, 0) < datetime.datetime.now().time() < datetime.time(12,1,0)) or \
-                (datetime.time(23, 59, 0) < datetime.datetime.now().time() < datetime.time(0,1,0)) ):
+        while (self._is_dangerous_time()):
             time.sleep(10)
             logging.info('snooze 10s because time close to noon/midnight: {}'.format(datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')))
 
@@ -109,15 +113,16 @@ class EcmwfApi():
         return plots_for_broadcast
 
     def download_latest_plots(self):
-        for Station in self._stations:
-            if self._new_forecast_available(Station):
+        if not self._is_dangerous_time():
+            for Station in self._stations:
+                    if self._new_forecast_available(Station):
 
-                # update base_time with latest confirmed run
-                # base_time needs update before fetch
-                # if not updated, bot sends endless plots to users
-                Station.base_time = self._latest_confirmed_run(Station)
+                        # update base_time with latest confirmed run
+                        # base_time needs update before fetch
+                        # if not updated, bot sends endless plots to users
+                        Station.base_time = self._latest_confirmed_run(Station)
 
-                self._download_plots(Station)
+                        self._download_plots(Station)
 
 
         # copy because we reset _plots_for_broadcast now
