@@ -25,24 +25,21 @@ class PlotBot:
         self._dp = self.updater.dispatcher
 
         self._dp.add_handler(CommandHandler('start',self._start))
-        self._dp.add_handler(CommandHandler('subscribe',self._subscribe))
-        self._dp.add_handler(CommandHandler('unsubscribe',self._unsubscribe))
         self._dp.add_handler(CommandHandler('where_am_I',self._get_ip_address))
-        self._dp.add_handler(CommandHandler('conv',self._conv))
 
 
         subscription_handler = ConversationHandler(
             entry_points=[MessageHandler(Filters.regex('^(subscribe)$'), self._choose_station)],
             states={
-                STATION: [MessageHandler(Filters.regex('^(Davos|Tschiertschen)$'), self._subscribe_for_station)],
+                STATION: [MessageHandler(Filters.regex('^(Davos|Tschiertschen|Elm)$'), self._subscribe_for_station)],
                 },
             fallbacks=[CommandHandler('cancel', self._cancel)],
             )
 
         unsubscription_handler = ConversationHandler(
-            entry_points=[MessageHandler(Filters.regex('^(unsubscribe)$'), self._unchoose_station)],
+            entry_points=[MessageHandler(Filters.regex('^(unsubscribe)$'), self._choose_station)],
             states={
-                STATION: [MessageHandler(Filters.regex('^(Davos|Tschiertschen)$'), self._unsubscribe_for_station)],
+                STATION: [MessageHandler(Filters.regex('^(Davos|Tschiertschen|Elm)$'), self._unsubscribe_for_station)],
                 },
             fallbacks=[CommandHandler('cancel', self._cancel)],
             )
@@ -56,28 +53,18 @@ class PlotBot:
         self._new_users_waiting_for_plots = []
 
 
-    def _conv(self,update: Update, context: CallbackContext):
+    def _start(self,update: Update, context: CallbackContext):
         reply_keyboard = [['subscribe', 'unsubscribe']]
 
         reply_text = "Hi! I am OpenEns. I supply you with the latest ECWMF meteograms. \
                       As soon as the latest forecast is available I deliver them to you. \
-                      Choose one of the following actions below."
+                      You can subscribe for multiple locations in the Alps."
         update.message.reply_text(reply_text,
             reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True),
         )
-
-    def _unchoose_station(self,update: Update, context: CallbackContext) -> int:
-        reply_keyboard = [['Davos', 'Tschiertschen']]
-
-        reply_text = "Choose a station"
-        update.message.reply_text(reply_text,
-            reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True),
-        )
-
-        return STATION
 
     def _choose_station(self,update: Update, context: CallbackContext) -> int:
-        reply_keyboard = [['Davos', 'Tschiertschen']]
+        reply_keyboard = [['Davos', 'Tschiertschen', 'Elm']]
 
         reply_text = "Choose a station"
         update.message.reply_text(reply_text,
@@ -101,11 +88,14 @@ class PlotBot:
     def _subscribe_for_station(self,update: Update, context: CallbackContext) -> int:
         user = update.message.from_user
         msg_text = update.message.text
-        reply_text = f'Subscribed for Station {msg_text}'
+        reply_text = f"You sucessfully subscribed for {msg_text}. You will receive your first plots in a minute or two..."
         update.message.reply_text(reply_text,
-        reply_markup=ReplyKeyboardRemove(),
-        )
+            reply_markup=ReplyKeyboardRemove(),
+            )
         self._register_subscription(user,msg_text,context)
+
+        self._new_users_waiting_for_plots.append(user.id)
+
         logging.info(f' {user.first_name} subscribed for Station {msg_text}')
 
         return ConversationHandler.END
@@ -126,32 +116,6 @@ class PlotBot:
 
         logging.info(context.bot_data.setdefault(station, set()))
 
-    def _start(self,update: Update, context: CallbackContext):
-        reply_text = "Hi! I am OpenEns. I supply you with the latest ECWMF meteograms. \
-                      As soon as the latest forecast is available I deliver them to you. \
-                      Currently I send you forecasts for Tschiertschen and Davos."
-
-        reply_keyboard = [
-            ['/subscribe'],[ '/unsubscribe']
-        ]
-
-        markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=False)
-        user_id = update.effective_user.id
-
-        update.message.reply_text(reply_text, reply_markup=markup)
-
-    def _subscribe(self,update: Update, context: CallbackContext):
-        reply_text = "You sucessfully subscribed. You will receive your first plots in a minute or two..."
-        update.message.reply_text(reply_text)
-
-        # add user to subscription list
-        user_id = update.effective_user.id
-        context.bot_data.setdefault('user_id', set()) # create key if not present
-        context.bot_data['user_id'].add(user_id)
-
-        logging.info(context.bot_data.setdefault('user_id', set()))
-
-        self._new_users_waiting_for_plots.append(user_id)
 
     def _unsubscribe(self,update: Update, context: CallbackContext):
         reply_text = "You sucessfully unsubscribed."
@@ -192,12 +156,11 @@ class PlotBot:
 
     def send_plots_to_new_subscribers(self,plots):
         for user_id in self._new_users_waiting_for_plots:
-            logging.debug(user_id)
             for station_name in plots:
-                message = station_name
-                self._dp.bot.send_message(chat_id=user_id, text=message)
-                for plot in plots[station_name]:
-                    self._dp.bot.send_photo(chat_id=user_id, photo=open(plot, 'rb'))
+                if user_id in self._dp.bot_data[station_name]:
+                    self._dp.bot.send_message(chat_id=user_id, text=station_name)
+                    for plot in plots[station_name]:
+                        self._dp.bot.send_photo(chat_id=user_id, photo=open(plot, 'rb'))
         logging.info('plots sent')
         self._new_users_waiting_for_plots = []
 
@@ -205,11 +168,10 @@ class PlotBot:
     def broadcast(self,plots):
         if plots:
             for station_name in plots:
-                message = station_name
-                for user_id in self._dp.bot_data['user_id']:
+                for user_id in self._dp.bot_data[station_name]:
                     logging.debug(user_id)
                     try:
-                        self._dp.bot.send_message(chat_id=user_id, text=message)
+                        self._dp.bot.send_message(chat_id=user_id, text=station_name)
                         for plot in plots[station_name]:
                             self._dp.bot.send_photo(chat_id=user_id, photo=open(plot, 'rb'))
                     except:
