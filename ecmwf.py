@@ -20,7 +20,9 @@ class Station():
 TST = Station(name='Tschiertschen',lat='46.8167',lon='9.6')
 DVS = Station(name='Davos',lat='46.8043',lon='9.83723')
 ELM = Station(name='Elm',lat='46.9167',lon='9.16667')
-ALL_STATIONS = [TST,DVS,ELM]
+PRT = Station(name='Pratteln',lat='47.58',lon='7.65')
+ZRH = Station(name='Zürich',lat='47.44',lon='8.5')
+ALL_STATIONS = [TST,DVS,ELM,PRT,ZRH]
 ALL_EPSGRAM = [d10_plume,d10_eps,d15_eps] 
 
 class EcmwfApi():

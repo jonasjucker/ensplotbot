@@ -14,6 +14,7 @@ from telegram.ext import (
 )
 
 CHOOSE, STATION = range(2)
+FILTER_STATIONS = Filters.regex('^(Zürich|Davos|Tschiertschen|Elm|Pratteln)$')
 
 class PlotBot:
 
@@ -25,13 +26,12 @@ class PlotBot:
         self._dp = self.updater.dispatcher
 
         self._dp.add_handler(CommandHandler('start',self._start))
-        self._dp.add_handler(CommandHandler('where_am_I',self._get_ip_address))
 
 
         subscription_handler = ConversationHandler(
             entry_points=[MessageHandler(Filters.regex('^(subscribe)$'), self._choose_station)],
             states={
-                STATION: [MessageHandler(Filters.regex('^(Davos|Tschiertschen|Elm)$'), self._subscribe_for_station)],
+                STATION: [MessageHandler(FILTER_STATIONS, self._subscribe_for_station)],
                 },
             fallbacks=[CommandHandler('cancel', self._cancel)],
             )
@@ -39,7 +39,7 @@ class PlotBot:
         unsubscription_handler = ConversationHandler(
             entry_points=[MessageHandler(Filters.regex('^(unsubscribe)$'), self._choose_station)],
             states={
-                STATION: [MessageHandler(Filters.regex('^(Davos|Tschiertschen|Elm)$'), self._unsubscribe_for_station)],
+                STATION: [MessageHandler(FILTER_STATIONS, self._unsubscribe_for_station)],
                 },
             fallbacks=[CommandHandler('cancel', self._cancel)],
             )
@@ -58,13 +58,14 @@ class PlotBot:
 
         reply_text = "Hi! I am OpenEns. I supply you with the latest ECWMF meteograms. \
                       As soon as the latest forecast is available I deliver them to you. \
-                      You can subscribe for multiple locations in the Alps."
+                      You can subscribe for multiple locations in the Alps. Send /start to see \
+                      your options."
         update.message.reply_text(reply_text,
-            reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True),
+            reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=False),
         )
 
     def _choose_station(self,update: Update, context: CallbackContext) -> int:
-        reply_keyboard = [['Davos', 'Tschiertschen', 'Elm']]
+        reply_keyboard = [['Zürich'],['Davos'],['Tschiertschen'],['Elm'],['Pratteln']]
 
         reply_text = "Choose a station"
         update.message.reply_text(reply_text,
@@ -128,16 +129,6 @@ class PlotBot:
             context.bot_data['user_id'].remove(user_id)
 
         logging.info(context.bot_data.setdefault('user_id', set()))
-
-    def _get_ip_address(self,update: Update, context: CallbackContext):
-        ip_address = '';
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.connect(("8.8.8.8",80))
-        ip_address = s.getsockname()[0]
-        s.close()
-
-        reply_text = f"IP-ADDRESS: {ip_address}"
-        update.message.reply_text(reply_text)
 
     def _cancel(self,update: Update, context: CallbackContext) -> int:
         user = update.message.from_user
