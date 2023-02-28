@@ -58,8 +58,8 @@ class PlotBot:
 
         reply_text = "Hi! I am OpenEns. I supply you with the latest ECWMF meteograms. \
                       As soon as the latest forecast is available I deliver them to you. \
-                      You can subscribe for multiple locations in the Alps. Send /start to see \
-                      your options."
+                      You can subscribe for multiple locations in the Alps."
+
         update.message.reply_text(reply_text,
             reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=False),
         )
