@@ -1,10 +1,18 @@
 import logging
 import argparse
 import time
+import yaml
 
 
 from ecmwf import EcmwfApi
 from bot import PlotBot
+
+
+class Station:
+    def __init__(self, name, lat, lon):
+        self.name = name
+        self.lat = lat
+        self.lon = lon
 
 def main():
 
@@ -24,10 +32,14 @@ def main():
                         help='unique token of bot (KEEP PRIVATE!)')
 
     args = parser.parse_args()
+    
+    with open('stations.yaml', 'r') as file:
+        station_config = yaml.safe_load(file)
 
-    bot = PlotBot(args.bot_token)
 
-    ecmwf = EcmwfApi()
+    bot = PlotBot(args.bot_token,station_config)
+
+    ecmwf = EcmwfApi(station_config)
 
     logging.info('Enter infinite loop')
 

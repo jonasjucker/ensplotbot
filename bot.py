@@ -14,14 +14,15 @@ from telegram.ext import (
 )
 
 CHOOSE, STATION = range(2)
-FILTER_STATIONS = Filters.regex('^(Zürich|Davos|Tschiertschen|Elm|Pratteln|Disentis)$')
 
 class PlotBot:
 
-    def __init__(self,token):
+    def __init__(self,token,station_config):
 
         # Create the Updater and pass it your bot's token.
         persistence = PicklePersistence(filename='backup/bot.pkl')
+        self._station_names = [station["name"] for station in station_config]
+        self._filter_stations = Filters.regex("^(" + "|".join(self._station_names) + ")$")
         self.updater = Updater(token, persistence=persistence)
         self._dp = self.updater.dispatcher
 
@@ -31,7 +32,7 @@ class PlotBot:
         subscription_handler = ConversationHandler(
             entry_points=[MessageHandler(Filters.regex('^(subscribe)$'), self._choose_station)],
             states={
-                STATION: [MessageHandler(FILTER_STATIONS, self._subscribe_for_station)],
+                STATION: [MessageHandler(self._filter_stations, self._subscribe_for_station)],
                 },
             fallbacks=[CommandHandler('cancel', self._cancel)],
             )
@@ -39,7 +40,7 @@ class PlotBot:
         unsubscription_handler = ConversationHandler(
             entry_points=[MessageHandler(Filters.regex('^(unsubscribe)$'), self._choose_station)],
             states={
-                STATION: [MessageHandler(FILTER_STATIONS, self._unsubscribe_for_station)],
+                STATION: [MessageHandler(self._filter_stations, self._unsubscribe_for_station)],
                 },
             fallbacks=[CommandHandler('cancel', self._cancel)],
             )
@@ -65,7 +66,7 @@ class PlotBot:
         )
 
     def _choose_station(self,update: Update, context: CallbackContext) -> int:
-        reply_keyboard = [['Zürich'],['Davos'],['Tschiertschen'],['Elm'],['Pratteln'],['Disentis']]
+        reply_keyboard = [[name] for name in self._station_names]
 
         reply_text = "Choose a station"
         update.message.reply_text(reply_text,
