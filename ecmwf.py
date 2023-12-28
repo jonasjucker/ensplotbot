@@ -10,27 +10,20 @@ d10_plume = 'classical_plume'
 d10_eps = 'classical_10d'
 d15_eps = 'classical_15d'
 
-class Station():
-    def __init__(self,name,lat,lon):
-        self.name = name
-        self.lat = lat
-        self.lon = lon
-        self.base_time = None
-
-TST = Station(name='Tschiertschen',lat='46.8167',lon='9.6')
-DVS = Station(name='Davos',lat='46.8043',lon='9.83723')
-ELM = Station(name='Elm',lat='46.9167',lon='9.16667')
-PRT = Station(name='Pratteln',lat='47.58',lon='7.65')
-ZRH = Station(name='Zürich',lat='47.44',lon='8.5')
-DIS = Station(name='Disentis',lat='46.74',lon='8.76')
-ALL_STATIONS = [TST,DVS,ELM,PRT,ZRH,DIS]
 ALL_EPSGRAM = [d10_plume,d10_eps,d15_eps] 
 
 class EcmwfApi():
+    def __init__(self,station_config):
+        
+        class Station():
+            def __init__(self,name,lat,lon):
+                self.name = name
+                self.lat = lat
+                self.lon = lon
+                self.base_time = None
 
-    def __init__(self):
         self._API_URL = "https://charts.ecmwf.int/opencharts-api/v1/" 
-        self._stations = ALL_STATIONS
+        self._stations = [Station(**station_data) for station_data in station_config]
         self._epsgrams = ALL_EPSGRAM
 
         self._plots_for_broadcast = {}
