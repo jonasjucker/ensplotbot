@@ -14,7 +14,7 @@ from telegram.ext import (
 )
 
 CHOOSE, STATION = range(2)
-FILTER_STATIONS = Filters.regex('^(Zürich|Davos|Tschiertschen|Elm|Pratteln)$')
+FILTER_STATIONS = Filters.regex('^(Zürich|Davos|Tschiertschen|Elm|Pratteln|Disentis)$')
 
 class PlotBot:
 
@@ -65,7 +65,7 @@ class PlotBot:
         )
 
     def _choose_station(self,update: Update, context: CallbackContext) -> int:
-        reply_keyboard = [['Zürich'],['Davos'],['Tschiertschen'],['Elm'],['Pratteln']]
+        reply_keyboard = [['Zürich'],['Davos'],['Tschiertschen'],['Elm'],['Pratteln'],['Disentis']]
 
         reply_text = "Choose a station"
         update.message.reply_text(reply_text,
