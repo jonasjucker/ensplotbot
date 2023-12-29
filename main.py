@@ -7,13 +7,6 @@ import yaml
 from ecmwf import EcmwfApi
 from bot import PlotBot
 
-
-class Station:
-    def __init__(self, name, lat, lon):
-        self.name = name
-        self.lat = lat
-        self.lon = lon
-
 def main():
 
     # Enable logging
