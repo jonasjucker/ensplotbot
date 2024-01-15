@@ -10,15 +10,11 @@
   lat: 46.9167
   lon: 9.16667
 
-- name: Pratteln
-  lat: 47.58
-  lon: 7.65
-
 - name: Zürich
-  lat: 47.44
-  lon: 8.5
+  lat: 47.3667
+  lon: 8.55
 
 - name: Disentis
-  lat: 46.74
-  lon: 8.76
+  lat: 46.7034
+  lon: 8.8509
 
