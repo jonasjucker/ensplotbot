@@ -98,9 +98,10 @@ class EcmwfApi():
         logging.info("image saved in {}".format(file))
         return file
 
-    def download_plots(self):
+    def download_plots(self,requested_stations):
         for Station in self._stations:
-            self._download_plots(Station)
+            if Station.name in requested_stations:
+                self._download_plots(Station)
 
         # copy because we reset _plots_for_broadcast now
         plots_for_broadcast = self._plots_for_broadcast.copy()
