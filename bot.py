@@ -39,7 +39,7 @@ class PlotBot:
             )
 
         unsubscription_handler = ConversationHandler(
-            entry_points=[MessageHandler(Filters.regex('^(unsubscribe)$'), self._choose_station)],
+            entry_points=[MessageHandler(Filters.regex('^(unsubscribe)$'), self._revoke_station)],
             states={
                 STATION: [MessageHandler(self._filter_stations, self._unsubscribe_for_station)],
                 },
@@ -63,16 +63,41 @@ class PlotBot:
         update.message.reply_text(reply_text,
             reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=False),
         )
+    
+    def _choose_station(self, update: Update, context: CallbackContext) -> int:
+        user_id = update.message.chat_id
 
-    def _choose_station(self,update: Update, context: CallbackContext) -> int:
-        reply_keyboard = [[name] for name in self._station_names]
+        # Get the stations that the user has already subscribed to
+        subscribed_stations = [station for station, users in context.bot_data.items() if user_id in users]
 
-        reply_text = "Choose a station"
-        update.message.reply_text(reply_text,
-            reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True),
-        )
+        # Only include stations that the user has not already subscribed to
+        self._send_station_keyboard(update, [name for name in self._station_names if name not in subscribed_stations])
 
         return STATION
+
+    def _revoke_station(self, update: Update, context: CallbackContext) -> int:
+        user_id = update.message.chat_id
+
+        # Get the stations that the user has already subscribed to
+        subscribed_stations = [station for station, users in context.bot_data.items() if user_id in users]
+
+        # Only include stations that the user has already subscribed to
+        self._send_station_keyboard(update, [name for name in self._station_names if name in subscribed_stations])
+
+        return STATION
+
+    def _send_station_keyboard(self, update: Update, station_names: list[str]):
+        reply_keyboard = [[name] for name in station_names]
+
+        if reply_keyboard:
+            reply_text = "Choose a station"
+            update.message.reply_text(reply_text,
+                reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True),
+            )
+        else:
+            update.message.reply_text("Sorry, no more stations for you here",
+                reply_markup=ReplyKeyboardRemove())
+            return ConversationHandler.END
 
     def _unsubscribe_for_station(self,update: Update, context: CallbackContext) -> int:
         user = update.message.from_user
