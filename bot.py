@@ -22,6 +22,7 @@ class PlotBot:
         # Create the Updater and pass it your bot's token.
         persistence = PicklePersistence(filename='backup/bot.pkl')
         self._station_names = [station["name"] for station in station_config]
+        self._subscriptions = {station:set() for station in self._station_names}
         self._filter_stations = Filters.regex("^(" + "|".join(self._station_names) + ")$")
         self.updater = Updater(token, persistence=persistence)
         self._dp = self.updater.dispatcher
@@ -50,8 +51,6 @@ class PlotBot:
 
         # start the bot
         self.updater.start_polling()
-
-        self._new_users_waiting_for_plots = []
 
 
     def _start(self,update: Update, context: CallbackContext):
@@ -96,11 +95,10 @@ class PlotBot:
             )
         self._register_subscription(user,msg_text,context)
 
-        self._new_users_waiting_for_plots.append(user.id)
-
         logging.info(f' {user.first_name} subscribed for Station {msg_text}')
 
         return ConversationHandler.END
+
 
     def _register_subscription(self,user,station,context):
 
@@ -108,7 +106,9 @@ class PlotBot:
         context.bot_data.setdefault(station, set())
         context.bot_data[station].add(user.id)
 
-        logging.info(context.bot_data.setdefault(station, set()))
+        self._subscriptions[station].add(user.id)
+
+        logging.debug(context.bot_data.setdefault(station, set()))
 
     def _revoke_subscription(self,user,station,context):
 
@@ -116,7 +116,7 @@ class PlotBot:
         if user.id in context.bot_data[station]:
             context.bot_data[station].remove(user.id)
 
-        logging.info(context.bot_data.setdefault(station, set()))
+        logging.debug(context.bot_data.setdefault(station, set()))
 
 
     def _unsubscribe(self,update: Update, context: CallbackContext):
@@ -129,7 +129,7 @@ class PlotBot:
         if user_id in context.bot_data['user_id']:
             context.bot_data['user_id'].remove(user_id)
 
-        logging.info(context.bot_data.setdefault('user_id', set()))
+        logging.debug(context.bot_data.setdefault('user_id', set()))
 
     def _cancel(self,update: Update, context: CallbackContext) -> int:
         user = update.message.from_user
@@ -141,21 +141,20 @@ class PlotBot:
         return ConversationHandler.END
 
     def has_new_subscribers_waiting(self):
-        if self._new_users_waiting_for_plots:
-            return True
-        else:
-            return False
+        return any(users for users in self._subscriptions.values())
 
-    def send_plots_to_new_subscribers(self,plots):
-        for user_id in self._new_users_waiting_for_plots:
-            for station_name in plots:
-                if user_id in self._dp.bot_data[station_name]:
-                    self._dp.bot.send_message(chat_id=user_id, text=station_name)
-                    for plot in plots[station_name]:
-                        self._dp.bot.send_photo(chat_id=user_id, photo=open(plot, 'rb'))
-        logging.info('plots sent')
-        self._new_users_waiting_for_plots = []
+    def stations_of_new_subscribers(self):
+        return [station for station, users in self._subscriptions.items() if users]
 
+    def send_plots_to_new_subscribers(self, plots):
+        for station_name, users in self._subscriptions.items():
+            for user_id in users:
+                self._dp.bot.send_message(chat_id=user_id, text=station_name)
+                for plot in plots[station_name]:
+                    self._dp.bot.send_photo(chat_id=user_id, photo=open(plot, 'rb'))
+        logging.info('plots sent to new subscribers')
+
+        self._subscriptions = {station: set() for station in self._station_names}
 
     def broadcast(self,plots):
         if plots:
@@ -169,4 +168,4 @@ class PlotBot:
                     except:
                         logging.info('Could not send message to user: {user_id}')
 
-            logging.info('plots sent')
+            logging.info('plots sent to all users')
