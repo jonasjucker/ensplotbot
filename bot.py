@@ -12,7 +12,7 @@ from telegram.ext import (
     CallbackContext,
 )
 
-CHOOSE, STATION = range(2)
+ONE_TIME, SUBSCRIBE, UNSUBSCRIBE = range(3)
 
 class PlotBot:
 
@@ -34,7 +34,7 @@ class PlotBot:
         subscription_handler = ConversationHandler(
             entry_points=[CommandHandler('subscribe', self._choose_station)],
             states={
-                STATION: [MessageHandler(self._filter_stations, self._subscribe_for_station)],
+                SUBSCRIBE: [MessageHandler(self._filter_stations, self._subscribe_for_station)],
                 },
             fallbacks=[CommandHandler('cancel', self._cancel)],
             )
@@ -42,7 +42,7 @@ class PlotBot:
         one_time_forecast_handler = ConversationHandler(
             entry_points=[CommandHandler('plots', self._choose_all_station)],
             states={
-                STATION: [MessageHandler(self._filter_stations, self._request_one_time_forecast_for_station)],
+                ONE_TIME: [MessageHandler(self._filter_stations, self._request_one_time_forecast_for_station)],
                 },
             fallbacks=[CommandHandler('cancel', self._cancel)],
             )
@@ -50,7 +50,7 @@ class PlotBot:
         unsubscription_handler = ConversationHandler(
             entry_points=[CommandHandler('unsubscribe', self._revoke_station)],
             states={
-                STATION: [MessageHandler(self._filter_stations, self._unsubscribe_for_station)],
+                UNSUBSCRIBE: [MessageHandler(self._filter_stations, self._unsubscribe_for_station)],
                 },
             fallbacks=[CommandHandler('cancel', self._cancel)],
             )
@@ -78,9 +78,9 @@ class PlotBot:
         subscribed_stations = [station for station, users in context.bot_data.items() if user_id in users]
 
         # Only include stations that the user has not already subscribed to
-        self._send_station_keyboard(update, [name for name in self._station_names if name not in subscribed_stations])
+        not_subscribed_for_all_stations = self._send_station_keyboard(update, [name for name in self._station_names if name not in subscribed_stations])
 
-        return STATION
+        return SUBSCRIBE if not_subscribed_for_all_stations else ConversationHandler.END
 
     def _choose_all_station(self, update: Update, context: CallbackContext) -> int:
         user_id = update.message.chat_id
@@ -88,7 +88,7 @@ class PlotBot:
         # Only include stations that the user has not already subscribed to
         self._send_station_keyboard(update, [name for name in self._station_names])
 
-        return STATION
+        return ONE_TIME
 
     def _revoke_station(self, update: Update, context: CallbackContext) -> int:
         user_id = update.message.chat_id
@@ -97,9 +97,9 @@ class PlotBot:
         subscribed_stations = [station for station, users in context.bot_data.items() if user_id in users]
 
         # Only include stations that the user has already subscribed to
-        self._send_station_keyboard(update, [name for name in self._station_names if name in subscribed_stations])
+        subscription_present = self._send_station_keyboard(update, [name for name in self._station_names if name in subscribed_stations])
 
-        return STATION
+        return UNSUBSCRIBE if subscription_present else ConversationHandler.END
 
     def _send_station_keyboard(self, update: Update, station_names: list[str]):
         reply_keyboard = [[name] for name in station_names]
@@ -109,10 +109,11 @@ class PlotBot:
             update.message.reply_text(reply_text,
                 reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True),
             )
+            return True
         else:
             update.message.reply_text("Sorry, no more stations for you here",
                 reply_markup=ReplyKeyboardRemove())
-            return ConversationHandler.END
+            return False
 
     def _unsubscribe_for_station(self,update: Update, context: CallbackContext) -> int:
         user = update.message.from_user
