@@ -238,6 +238,6 @@ class PlotBot:
                         for plot in plots[station_name]:
                             self._dp.bot.send_photo(chat_id=user_id, photo=open(plot, 'rb'))
                     except:
-                        logging.info('Could not send message to user: {user_id}')
+                        logging.info(f'Could not send message to user: {user_id}')
 
             logging.info('plots sent to all users')
