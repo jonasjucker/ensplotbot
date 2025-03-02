@@ -23,6 +23,7 @@ class PlotBot:
         persistence = PicklePersistence(filename='backup/bot.pkl')
         self._station_names = [station["name"] for station in station_config]
         self._subscriptions = {station:set() for station in self._station_names}
+        self._one_time_forecast_requests = {station:set() for station in self._station_names}
         self._filter_stations = Filters.regex("^(" + "|".join(self._station_names) + ")$")
         self.updater = Updater(token, persistence=persistence)
         self._dp = self.updater.dispatcher
@@ -38,6 +39,14 @@ class PlotBot:
             fallbacks=[CommandHandler('cancel', self._cancel)],
             )
 
+        one_time_forecast_handler = ConversationHandler(
+            entry_points=[MessageHandler(Filters.regex('^(one-time-forecast)$'), self._choose_all_station)],
+            states={
+                STATION: [MessageHandler(self._filter_stations, self._request_one_time_forecast_for_station)],
+                },
+            fallbacks=[CommandHandler('cancel', self._cancel)],
+            )
+
         unsubscription_handler = ConversationHandler(
             entry_points=[MessageHandler(Filters.regex('^(unsubscribe)$'), self._revoke_station)],
             states={
@@ -48,17 +57,18 @@ class PlotBot:
 
         self._dp.add_handler(subscription_handler)
         self._dp.add_handler(unsubscription_handler)
+        self._dp.add_handler(one_time_forecast_handler)
 
         # start the bot
         self.updater.start_polling()
 
 
     def _start(self,update: Update, context: CallbackContext):
-        reply_keyboard = [['subscribe', 'unsubscribe']]
+        reply_keyboard = [['subscribe'], ['unsubscribe'], ['one-time-forecast']]
 
         reply_text = "Hi! I am OpenEns. I supply you with the latest ECWMF meteograms. \
                       As soon as the latest forecast is available I deliver them to you. \
-                      You can subscribe for multiple locations in the Alps."
+                      You can subscribe or get it as a one-time-forecast for multiple locations in the Alps."
 
         update.message.reply_text(reply_text,
             reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=False),
@@ -72,6 +82,14 @@ class PlotBot:
 
         # Only include stations that the user has not already subscribed to
         self._send_station_keyboard(update, [name for name in self._station_names if name not in subscribed_stations])
+
+        return STATION
+
+    def _choose_all_station(self, update: Update, context: CallbackContext) -> int:
+        user_id = update.message.chat_id
+
+        # Only include stations that the user has not already subscribed to
+        self._send_station_keyboard(update, [name for name in self._station_names])
 
         return STATION
 
@@ -124,6 +142,19 @@ class PlotBot:
 
         return ConversationHandler.END
 
+    def _request_one_time_forecast_for_station(self,update: Update, context: CallbackContext) -> int:
+        user = update.message.from_user
+        msg_text = update.message.text
+        reply_text = f"You sucessfully requested a forecast for {msg_text}. You will receive your first plots in a minute or two..."
+        update.message.reply_text(reply_text,
+            reply_markup=ReplyKeyboardRemove(),
+            )
+        self._one_time_forecast_requests[msg_text].add(user.id)
+
+        logging.info(f' {user.first_name} requested forecast for Station {msg_text}')
+
+        return ConversationHandler.END
+
 
     def _register_subscription(self,user,station,context):
 
@@ -168,6 +199,12 @@ class PlotBot:
     def has_new_subscribers_waiting(self):
         return any(users for users in self._subscriptions.values())
 
+    def has_one_time_forecast_waiting(self):
+        return any(users for users in self._one_time_forecast_requests.values())
+
+    def stations_of_one_time_request(self):
+        return [station for station, users in self._one_time_forecast_requests.items() if users]
+
     def stations_of_new_subscribers(self):
         return [station for station, users in self._subscriptions.items() if users]
 
@@ -180,6 +217,16 @@ class PlotBot:
         logging.info('plots sent to new subscribers')
 
         self._subscriptions = {station: set() for station in self._station_names}
+
+    def send_one_time_forecast(self, plots):
+        for station_name, users in self._one_time_forecast_requests.items():
+            for user_id in users:
+                self._dp.bot.send_message(chat_id=user_id, text=station_name)
+                for plot in plots[station_name]:
+                    self._dp.bot.send_photo(chat_id=user_id, photo=open(plot, 'rb'))
+        logging.info('plots sent to one time forecast requests')
+
+        self._one_time_forecast_requests = {station: set() for station in self._station_names}
 
     def broadcast(self,plots):
         if plots:
