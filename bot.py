@@ -1,5 +1,4 @@
 import logging
-import socket
 import time
 
 from telegram import ReplyKeyboardMarkup, Update, ReplyKeyboardRemove
@@ -208,22 +207,29 @@ class PlotBot:
     def stations_of_new_subscribers(self):
         return [station for station, users in self._subscriptions.items() if users]
 
+
+    def _send_plot_to_user(self,plots,station_name,user_id):
+        logging.debug(user_id)
+        try:
+            self._dp.bot.send_message(chat_id=user_id, text=station_name)
+            for plot in plots[station_name]:
+                self._dp.bot.send_photo(chat_id=user_id, photo=open(plot, 'rb'))
+        except:
+            logging.info(f'Could not send plot to user: {user_id}')
+
+    def _send_plots(self, plots, requests):
+            for station_name, users in requests.items():
+                for user_id in users:
+                    self._send_plot_to_user(plots, station_name, user_id)
+
     def send_plots_to_new_subscribers(self, plots):
-        for station_name, users in self._subscriptions.items():
-            for user_id in users:
-                self._dp.bot.send_message(chat_id=user_id, text=station_name)
-                for plot in plots[station_name]:
-                    self._dp.bot.send_photo(chat_id=user_id, photo=open(plot, 'rb'))
+        self._send_plots(plots, self._subscriptions)
         logging.info('plots sent to new subscribers')
 
         self._subscriptions = {station: set() for station in self._station_names}
 
     def send_one_time_forecast(self, plots):
-        for station_name, users in self._one_time_forecast_requests.items():
-            for user_id in users:
-                self._dp.bot.send_message(chat_id=user_id, text=station_name)
-                for plot in plots[station_name]:
-                    self._dp.bot.send_photo(chat_id=user_id, photo=open(plot, 'rb'))
+        self._send_plots(plots, self._one_time_forecast_requests)
         logging.info('plots sent to one time forecast requests')
 
         self._one_time_forecast_requests = {station: set() for station in self._station_names}
@@ -232,12 +238,5 @@ class PlotBot:
         if plots:
             for station_name in plots:
                 for user_id in self._dp.bot_data[station_name]:
-                    logging.debug(user_id)
-                    try:
-                        self._dp.bot.send_message(chat_id=user_id, text=station_name)
-                        for plot in plots[station_name]:
-                            self._dp.bot.send_photo(chat_id=user_id, photo=open(plot, 'rb'))
-                    except:
-                        logging.info(f'Could not send message to user: {user_id}')
-
+                    self._send_plot_to_user(plots,station_name,user_id)
             logging.info('plots sent to all users')
