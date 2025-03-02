@@ -59,13 +59,12 @@ class EcmwfApi():
         eps_type = 'classical_plume'
         product = 'opencharts_meteogram'
 
-        data = self._get_API_data_for_epsgram(station,self._latest_run(),product,eps_type)
 
         # API cannot provide link for non-existing plot
         try:
-            data["data"]["link"]["href"]
+            data = self._get_API_data_for_epsgram(station,self._latest_run(),product,eps_type)
             return self._latest_run()
-        except KeyError:
+        except ValueError:
             latest_run_time_object = datetime.datetime.strptime(self._latest_run(),'%Y-%m-%dT%H:%M:%SZ') - datetime.timedelta(hours = 12)
             return latest_run_time_object.strftime('%Y-%m-%dT%H:%M:%SZ')
 
@@ -81,6 +80,9 @@ class EcmwfApi():
                                                                                             station.lat,
                                                                                             station.lon)
         result = requests.get(get)
+        if not result.ok:
+            logging.debug('Forecast not available for {} at {}'.format(station.name,base_time))
+            raise ValueError('Forecast not available for {} at {}'.format(station.name,base_time))
         return result.json()
 
         
