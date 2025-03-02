@@ -27,11 +27,12 @@ class PlotBot:
         self.updater = Updater(token, persistence=persistence)
         self._dp = self.updater.dispatcher
 
-        self._dp.add_handler(CommandHandler('start',self._start))
+        self._dp.add_handler(CommandHandler('help',self._help))
+        self._dp.add_handler(CommandHandler('cancel',self._cancel))
 
 
         subscription_handler = ConversationHandler(
-            entry_points=[MessageHandler(Filters.regex('^(subscribe)$'), self._choose_station)],
+            entry_points=[CommandHandler('subscribe', self._choose_station)],
             states={
                 STATION: [MessageHandler(self._filter_stations, self._subscribe_for_station)],
                 },
@@ -39,7 +40,7 @@ class PlotBot:
             )
 
         one_time_forecast_handler = ConversationHandler(
-            entry_points=[MessageHandler(Filters.regex('^(one-time-forecast)$'), self._choose_all_station)],
+            entry_points=[CommandHandler('plots', self._choose_all_station)],
             states={
                 STATION: [MessageHandler(self._filter_stations, self._request_one_time_forecast_for_station)],
                 },
@@ -47,7 +48,7 @@ class PlotBot:
             )
 
         unsubscription_handler = ConversationHandler(
-            entry_points=[MessageHandler(Filters.regex('^(unsubscribe)$'), self._revoke_station)],
+            entry_points=[CommandHandler('unsubscribe', self._revoke_station)],
             states={
                 STATION: [MessageHandler(self._filter_stations, self._unsubscribe_for_station)],
                 },
@@ -62,15 +63,12 @@ class PlotBot:
         self.updater.start_polling()
 
 
-    def _start(self,update: Update, context: CallbackContext):
-        reply_keyboard = [['subscribe'], ['unsubscribe'], ['one-time-forecast']]
+    def _help(self,update: Update, context: CallbackContext):
 
-        reply_text = "Hi! I am OpenEns. I supply you with the latest ECWMF meteograms. \
-                      As soon as the latest forecast is available I deliver them to you. \
-                      You can subscribe or get it as a one-time-forecast for multiple locations in the Alps."
+        greetings = "Hi! I am OpenEns. I supply you with the latest ECWMF meteograms. \
+                    The forecast is usually available at 8:00 for the 00 UTC run and at 20:00 for the 12 UTC run."
 
-        update.message.reply_text(reply_text,
-            reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=False),
+        update.message.reply_text(greetings,
         )
     
     def _choose_station(self, update: Update, context: CallbackContext) -> int:
