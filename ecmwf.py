@@ -51,7 +51,10 @@ class EcmwfApi():
         # rounding ends up in future
         if t_now <= t_now_rounded:
             t_now_rounded = t_now_rounded - datetime.timedelta(hours = 12) 
-        return t_now_rounded.strftime('%Y-%m-%dT%H:%M:%SZ')
+
+        latest_run = t_now_rounded.strftime('%Y-%m-%dT%H:%M:%SZ')
+        logging.debug('latest run: {}'.format(latest_run))
+        return latest_run
 
 
     def _latest_confirmed_run(self,station):
@@ -119,7 +122,9 @@ class EcmwfApi():
                         # update base_time with latest confirmed run
                         # base_time needs update before fetch
                         # if not updated, bot sends endless plots to users
-                        Station.base_time = self._latest_confirmed_run(Station)
+                        base_time = self._latest_confirmed_run(Station)
+                        logging.debug('base_time for {} updated to {}'.format(Station.name,base_time))
+                        Station.base_time = base_time
 
                         self._download_plots(Station)
 
