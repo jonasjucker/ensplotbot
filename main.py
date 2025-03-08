@@ -9,13 +9,6 @@ from bot import PlotBot
 
 def main():
 
-    # Enable logging
-    logging.basicConfig(
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', 
-        level=logging.INFO,
-    )
-
-    logger = logging.getLogger(__name__)
 
     parser = argparse.ArgumentParser()
 
@@ -23,14 +16,33 @@ def main():
                         dest='bot_token', \
                         type=str, \
                         help='unique token of bot (KEEP PRIVATE!)')
+    parser.add_argument('--bot_backup',
+                        dest='bot_backup', \
+                        type=str, \
+                        help='Backup folder for the bot')
+
+    parser.add_argument('--log_level', 
+                        dest='log_level', 
+                        type=int, 
+                        default=logging.INFO, 
+                        choices=[logging.DEBUG, logging.INFO],
+                        help=f'set the logging level ({logging.DEBUG}: DEBUG, {logging.INFO}: INFO')
 
     args = parser.parse_args()
+
+    # Enable logging
+    logging.basicConfig(
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', 
+        level=args.log_level,
+    )
+
+    logger = logging.getLogger(__name__)
     
     with open('stations.yaml', 'r') as file:
         station_config = yaml.safe_load(file)
 
 
-    bot = PlotBot(args.bot_token,station_config)
+    bot = PlotBot(args.bot_token,station_config,args.bot_backup)
 
     ecmwf = EcmwfApi(station_config)
 

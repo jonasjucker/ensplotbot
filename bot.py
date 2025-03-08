@@ -1,5 +1,6 @@
 import logging
 import time
+import os
 
 from telegram import ReplyKeyboardMarkup, Update, ReplyKeyboardRemove
 from telegram.ext import (
@@ -17,10 +18,10 @@ TIMEOUT = 60
 
 class PlotBot:
 
-    def __init__(self,token,station_config):
+    def __init__(self,token,station_config, backup):
 
         # Create the Updater and pass it your bot's token.
-        persistence = PicklePersistence(filename='backup/bot.pkl')
+        persistence = PicklePersistence(filename=os.path.join(backup,'bot.pkl'))
         self._station_names = [station["name"] for station in station_config]
         self._subscriptions = {station:set() for station in self._station_names}
         self._one_time_forecast_requests = {station:set() for station in self._station_names}
