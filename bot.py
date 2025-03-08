@@ -13,6 +13,7 @@ from telegram.ext import (
 )
 
 ONE_TIME, SUBSCRIBE, UNSUBSCRIBE = range(3)
+TIMEOUT = 60
 
 class PlotBot:
 
@@ -37,6 +38,7 @@ class PlotBot:
                 SUBSCRIBE: [MessageHandler(self._filter_stations, self._subscribe_for_station)],
                 },
             fallbacks=[CommandHandler('cancel', self._cancel)],
+            conversation_timeout=TIMEOUT,
             )
 
         one_time_forecast_handler = ConversationHandler(
@@ -45,6 +47,7 @@ class PlotBot:
                 ONE_TIME: [MessageHandler(self._filter_stations, self._request_one_time_forecast_for_station)],
                 },
             fallbacks=[CommandHandler('cancel', self._cancel)],
+            conversation_timeout=TIMEOUT,
             )
 
         unsubscription_handler = ConversationHandler(
@@ -53,6 +56,7 @@ class PlotBot:
                 UNSUBSCRIBE: [MessageHandler(self._filter_stations, self._unsubscribe_for_station)],
                 },
             fallbacks=[CommandHandler('cancel', self._cancel)],
+            conversation_timeout=TIMEOUT,
             )
 
         self._dp.add_handler(subscription_handler)
