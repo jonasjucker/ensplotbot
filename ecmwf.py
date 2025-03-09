@@ -45,6 +45,11 @@ class EcmwfApi():
         else:
             raise ValueError('No available base_time found')
 
+    def _future_run(self):
+        t_now = datetime.datetime.now()
+        t_now_rounded = pd.Timestamp.now().round(freq='12H').to_pydatetime()
+        t_now_rounded = t_now_rounded + datetime.timedelta(hours = 12)
+        return t_now_rounded.strftime('%Y-%m-%dT%H:%M:%SZ')
 
     def _first_guess_base_time(self):
         t_now = datetime.datetime.now()
@@ -65,7 +70,7 @@ class EcmwfApi():
         base_time = set()
         for eps_type in ALL_EPSGRAM[0]:
             try:
-                data = self._get_API_data_for_epsgram_v2(station,'2025-02-01T00:00:00Z',eps_type,raise_on_error=False)
+                data = self._get_API_data_for_epsgram(station,self._future_run(),eps_type,raise_on_error=False)
                 base_time.add(self._extract_available_base_time(data['error']))
             except ValueError as e:
                 logging.warning('Error for {} at {}: {}'.format(station.name,eps_type,e))
@@ -80,7 +85,7 @@ class EcmwfApi():
 
 
     @retry.retry(tries=2, delay=10)
-    def _get_API_data_for_epsgram_v2(self,station,base_time,eps_type,raise_on_error=True):
+    def _get_API_data_for_epsgram(self,station,base_time,eps_type,raise_on_error=True):
         get = '{}products/opencharts_meteogram/?epsgram={}&base_time={}&station_name={}&lat={}&lon={}'.format(self._API_URL,
                                                                                             eps_type,
                                                                                             base_time,
@@ -104,35 +109,9 @@ class EcmwfApi():
                     logging.warning('JSONDecodeError for {} at {}'.format(station.name,base_time))
                     raise ValueError('JSONDecodeError for {} at {}'.format(station.name,base_time))
 
-    def _get_API_data_for_epsgram_no_error_catch(self,station,base_time,product,eps_type):
-        get = '{}products/{}/?epsgram={}&base_time={}&station_name={}&lat={}&lon={}'.format(self._API_URL,
-                                                                                            product,
-                                                                                            eps_type,
-                                                                                            base_time,
-                                                                                            station.name,
-                                                                                            station.lat,
-                                                                                            station.lon)
-        result = requests.get(get)
-        return result.json()
-    def _get_API_data_for_epsgram(self,station,base_time,product,eps_type):
-
-        get = '{}products/{}/?epsgram={}&base_time={}&station_name={}&lat={}&lon={}'.format(self._API_URL,
-                                                                                            product,
-                                                                                            eps_type,
-                                                                                            base_time,
-                                                                                            station.name,
-                                                                                            station.lat,
-                                                                                            station.lon)
-        result = requests.get(get)
-
-        if not result.ok:
-            logging.debug('Forecast not available for {} at {}'.format(station.name,base_time))
-            raise ValueError('Forecast not available for {} at {}'.format(station.name,base_time))
-        return result.json()
-
         
     def _request_epsgram_link_for_station(self,station, eps_type):
-        data = self._get_API_data_for_epsgram_v2(station,station.base_time,eps_type)
+        data = self._get_API_data_for_epsgram(station,station.base_time,eps_type)
         return data["data"]["link"]["href"]
 
     def _save_image_of_station(self,image_api,station,eps_type):
