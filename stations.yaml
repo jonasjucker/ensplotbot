@@ -1,27 +1,3 @@
 - name: Tschiertschen
   lat: 46.8177
   lon: 9.60638
-
-- name: Davos
-  lat: 46.8043
-  lon: 9.83723
-
-- name: Elm
-  lat: 46.9167
-  lon: 9.16667
-
-- name: Zürich
-  lat: 47.3667
-  lon: 8.55
-
-- name: Disentis
-  lat: 46.7034
-  lon: 8.8509
-
-- name: Winterthur
-  lat: 47.49
-  lon: 8.75
-
-- name: Locarno
-  lat: 46.1727
-  lon: 8.8014

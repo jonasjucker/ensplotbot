@@ -79,7 +79,7 @@ class EcmwfApi():
             return base_time.pop()
 
 
-    @retry.retry(tries=5, delay=1)
+    @retry.retry(tries=2, delay=10)
     def _get_API_data_for_epsgram_v2(self,station,base_time,eps_type,raise_on_error=True):
         get = '{}products/opencharts_meteogram/?epsgram={}&base_time={}&station_name={}&lat={}&lon={}'.format(self._API_URL,
                                                                                             eps_type,
