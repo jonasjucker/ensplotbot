@@ -3,7 +3,6 @@ import json
 import datetime
 import time
 import logging
-import re
 import retry
 
 import pandas as pd
@@ -37,14 +36,6 @@ class EcmwfApi():
             Station.base_time = self._base_time
             logging.debug('init {} with base_time {}'.format(Station.name,Station.base_time))
 
-
-    def _extract_available_base_time(self,msg):
-        pattern = r"Current available base_time \['([^']+)'"
-        match = re.search(pattern, msg[0])
-        if match:
-            return match.group(1)
-        else:
-            raise ValueError('No available base_time found')
 
     def _first_guess_base_time(self):
         t_now = datetime.datetime.now()
@@ -87,7 +78,7 @@ class EcmwfApi():
     def _latest_confirmed_run(self,station):
         # check if forecast for basetime is available for all epsgrams
         base_time = set()
-        for eps_type in ALL_EPSGRAM:
+        for eps_type in self._epsgrams:
             try:
                 self._get_API_data_for_epsgram(station,self._base_time,eps_type,raise_on_error=True)
                 base_time.add(self._base_time)

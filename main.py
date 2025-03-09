@@ -57,7 +57,7 @@ def main():
             bot.send_one_time_forecast(ecmwf.download_plots(bot.stations_of_one_time_request()))
         bot.broadcast(ecmwf.download_latest_plots())
 
-        snooze = 20
+        snooze = 5
         logging.debug(f'snooze {snooze}s ...')
         time.sleep(snooze)
 
