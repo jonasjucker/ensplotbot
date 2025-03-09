@@ -63,14 +63,14 @@ class EcmwfApi():
     def _latest_confirmed_run(self,station):
         # get base_time for each epsgram, only if all are available move to most recent
         base_time = set()
-        for eps_type in ALL_EPSGRAM:
+        for eps_type in ALL_EPSGRAM[0]:
             try:
                 data = self._get_API_data_for_epsgram_v2(station,'2025-02-01T00:00:00Z',eps_type,raise_on_error=False)
+                base_time.add(self._extract_available_base_time(data['error']))
             except ValueError as e:
                 logging.warning('Error for {} at {}: {}'.format(station.name,eps_type,e))
                 base_time.add(self._first_guess_base_time()) 
 
-            base_time.add(self._extract_available_base_time(data['error']))
             
         # if there are multiple base_time, take the oldest
         if len(base_time)> 1:
