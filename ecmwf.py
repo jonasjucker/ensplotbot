@@ -7,8 +7,6 @@ import re
 import retry
 
 
-import pandas as pd
-
 d10_plume = 'classical_plume'
 d10_eps = 'classical_10d'
 d15_eps = 'classical_15d'
@@ -61,7 +59,7 @@ class EcmwfApi():
             return base_time.pop()
 
 
-    @retry.retry(tries=5, delay=1)
+    @retry.retry(tries=10, delay=5)
     def _get_API_data_for_epsgram_v2(self,station,base_time,product,eps_type,raise_on_error=True):
         get = '{}products/{}/?epsgram={}&base_time={}&station_name={}&lat={}&lon={}'.format(self._API_URL,
                                                                                             product,
