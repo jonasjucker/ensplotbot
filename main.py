@@ -50,6 +50,7 @@ def main():
 
     while True:
 
+        ecmwf.upgrade_basetime()
         if bot.has_new_subscribers_waiting():
             bot.send_plots_to_new_subscribers(ecmwf.download_plots(bot.stations_of_new_subscribers()))
         if bot.has_one_time_forecast_waiting():

@@ -28,12 +28,13 @@ class EcmwfApi():
         self._API_URL = "https://charts.ecmwf.int/opencharts-api/v1/" 
         self._stations = [Station(**station_data) for station_data in station_config]
         self._epsgrams = ALL_EPSGRAM
+        self._base_time = self._fetch_available_base_time(fallback=True)
 
         self._plots_for_broadcast = {}
 
         # populate stations with valid run
         for Station in self._stations:
-            Station.base_time = self._latest_confirmed_run(Station)
+            Station.base_time = self._base_time
             logging.debug('init {} with base_time {}'.format(Station.name,Station.base_time))
 
 
@@ -44,12 +45,6 @@ class EcmwfApi():
             return match.group(1)
         else:
             raise ValueError('No available base_time found')
-
-    def _future_run(self):
-        t_now = datetime.datetime.now()
-        t_now_rounded = pd.Timestamp.now().round(freq='12H').to_pydatetime()
-        t_now_rounded = t_now_rounded + datetime.timedelta(hours = 12)
-        return t_now_rounded.strftime('%Y-%m-%dT%H:%M:%SZ')
 
     def _first_guess_base_time(self):
         t_now = datetime.datetime.now()
@@ -65,18 +60,40 @@ class EcmwfApi():
 
         return latest_run
 
-    def _latest_confirmed_run(self,station):
-        # get base_time for each epsgram, only if all are available move to most recent
-        base_time = set()
-        for eps_type in ALL_EPSGRAM[0]:
-            try:
-                data = self._get_API_data_for_epsgram(station,self._future_run(),eps_type,raise_on_error=False)
-                base_time.add(self._extract_available_base_time(data['error']))
-            except ValueError as e:
-                logging.warning('Error for {} at {}: {}'.format(station.name,eps_type,e))
-                base_time.add(self._first_guess_base_time()) 
 
-            
+    def upgrade_basetime(self):
+        try:
+            new_base_time = self._fetch_available_base_time(fallback=False)
+            if new_base_time != self._base_time:
+                self._base_time = new_base_time
+                logging.info('base_time updated to {}'.format(self._base_time))
+        except ValueError:
+            logging.debug('Upgrading base_time failed, keeping {}'.format(self._base_time))
+            pass
+
+        self._base_time = self._fetch_available_base_time(fallback=True)
+
+    def _fetch_available_base_time(self,fallback=False):
+        link = "schema/?product=opencharts_meteogram&package=openchart"
+        try:
+            run = self._get_from_API(link)['paths']['/products/opencharts_meteogram/']['get']['parameters'][1]['schema']['default']
+        except ValueError:
+            if fallback:
+                run = self._first_guess_base_time()
+            else:
+                raise ValueError('No available base_time found')
+        return run
+
+    def _latest_confirmed_run(self,station):
+        # check if forecast for basetime is available for all epsgrams
+        base_time = set()
+        for eps_type in ALL_EPSGRAM:
+            try:
+                self._get_API_data_for_epsgram(station,self._base_time,eps_type,raise_on_error=True)
+                base_time.add(self._base_time)
+            except ValueError as e:
+                base_time.add(station.base_time) 
+
         # if there are multiple base_time, take the oldest
         if len(base_time)> 1:
             return min(base_time)
@@ -84,34 +101,36 @@ class EcmwfApi():
             return base_time.pop()
 
 
-    @retry.retry(tries=2, delay=10)
-    def _get_API_data_for_epsgram(self,station,base_time,eps_type,raise_on_error=True):
-        get = '{}products/opencharts_meteogram/?epsgram={}&base_time={}&station_name={}&lat={}&lon={}'.format(self._API_URL,
-                                                                                            eps_type,
-                                                                                            base_time,
-                                                                                            station.name,
-                                                                                            station.lat,
-                                                                                            station.lon, raise_on_error=True)
-
+    @retry.retry(tries=3, delay=1)
+    def _get_from_API(self,link,raise_on_error=True):
+        get = '{}{}'.format(self._API_URL,link)
         result = requests.get(get)
 
         if not result.ok and raise_on_error:
-            logging.warning('Forecast not available for {} at {}'.format(station.name,base_time))
             raise ValueError('Forecast not available for {} at {}'.format(station.name,base_time))
         else:
             if result.status_code == 403:
-                logging.warning('403 Forbidden for {} at {}'.format(station.name,base_time))
+                logging.info('403 Forbidden for {}'.format(get))
                 raise ValueError('403 Forbidden for {} at {}'.format(station.name,base_time))
             else:
                 try:
                     return result.json()
                 except json.decoder.JSONDecodeError:
-                    logging.warning('JSONDecodeError for {} at {}'.format(station.name,base_time))
+                    logging.info('JSONDecodeError for {}'.format(get))
                     raise ValueError('JSONDecodeError for {} at {}'.format(station.name,base_time))
+
+    def _get_API_data_for_epsgram(self,station,base_time,eps_type,raise_on_error=True):
+        link = 'products/opencharts_meteogram/?epsgram={}&base_time={}&station_name={}&lat={}&lon={}'.format( eps_type,
+                                                                                            base_time,
+                                                                                            station.name,
+                                                                                            station.lat,
+                                                                                            station.lon, raise_on_error=True)
+
+        return self._get_from_API(link,raise_on_error=raise_on_error)
 
         
     def _request_epsgram_link_for_station(self,station, eps_type):
-        data = self._get_API_data_for_epsgram(station,station.base_time,eps_type)
+        data = self._get_API_data_for_epsgram(station,station.base_time,eps_type,raise_on_error=True)
         return data["data"]["link"]["href"]
 
     def _save_image_of_station(self,image_api,station,eps_type):
@@ -141,10 +160,10 @@ class EcmwfApi():
                     # base_time needs update before fetch
                     # if not updated, bot sends endless plots to users
                     base_time = self._latest_confirmed_run(Station)
-                    logging.debug('base_time for {} updated to {}'.format(Station.name,base_time))
-                    Station.base_time = base_time
-
-                    self._download_plots(Station)
+                    if base_time != self._base_time:
+                        logging.debug('base_time for {} updated to {}'.format(Station.name,base_time))
+                        Station.base_time = base_time
+                        self._download_plots(Station)
 
 
         # copy because we reset _plots_for_broadcast now
@@ -163,4 +182,4 @@ class EcmwfApi():
             self._plots_for_broadcast[Station.name] = plots
 
     def _new_forecast_available(self,Station):
-            return Station.base_time != self._latest_confirmed_run(Station)
+            return Station.base_time != self._base_time
