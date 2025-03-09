@@ -45,11 +45,18 @@ class EcmwfApi():
 
 
     def _latest_confirmed_run(self,station):
-        eps_type = 'classical_plume'
+        # get base_time for each epsgram, only if all are available move to most recent
         product = 'opencharts_meteogram'
-
-        data = self._get_API_data_for_epsgram_no_error_catch(station,'2024-03-01T00:00:00Z',product,eps_type)
-        return self._extract_available_base_time(data['error'])
+        base_time = set()
+        for eps_type in ALL_EPSGRAM:
+            data = self._get_API_data_for_epsgram_no_error_catch(station,'2024-03-01T00:00:00Z',product,eps_type)
+            base_time.add(self._extract_available_base_time(data['error']))
+            
+        # if there are multiple base_time, take the oldest
+        if len(base_time)> 1:
+            return min(base_time)
+        else:
+            return base_time.pop()
 
 
     def _get_API_data_for_epsgram_no_error_catch(self,station,base_time,product,eps_type):
