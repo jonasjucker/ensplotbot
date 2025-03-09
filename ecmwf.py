@@ -65,7 +65,7 @@ class EcmwfApi():
         product = 'opencharts_meteogram'
         base_time = set()
         for eps_type in ALL_EPSGRAM:
-            data = self._get_API_data_for_epsgram_v2(station,'2024-03-01T00:00:00Z',product,eps_type,raise_on_error=False)
+            data = self._get_API_data_for_epsgram_v2(station,'2025-02-01T00:00:00Z',product,eps_type,raise_on_error=False)
             base_time.add(self._extract_available_base_time(data['error']))
             
         # if there are multiple base_time, take the oldest
