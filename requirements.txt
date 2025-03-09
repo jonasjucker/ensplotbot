@@ -2,3 +2,4 @@ python-telegram-bot==13.1
 pandas
 requests
 PyYAML
+retry

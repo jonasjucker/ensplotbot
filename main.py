@@ -50,14 +50,12 @@ def main():
 
     while True:
 
-        try:
-            if bot.has_new_subscribers_waiting():
-                bot.send_plots_to_new_subscribers(ecmwf.download_plots(bot.stations_of_new_subscribers()))
-            if bot.has_one_time_forecast_waiting():
-                bot.send_one_time_forecast(ecmwf.download_plots(bot.stations_of_one_time_request()))
-            bot.broadcast(ecmwf.download_latest_plots())
-        except:
-            pass
+        ecmwf.upgrade_basetime()
+        if bot.has_new_subscribers_waiting():
+            bot.send_plots_to_new_subscribers(ecmwf.download_plots(bot.stations_of_new_subscribers()))
+        if bot.has_one_time_forecast_waiting():
+            bot.send_one_time_forecast(ecmwf.download_plots(bot.stations_of_one_time_request()))
+        bot.broadcast(ecmwf.download_latest_plots())
 
         snooze = 5
         logging.debug(f'snooze {snooze}s ...')
