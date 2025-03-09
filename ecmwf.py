@@ -3,6 +3,7 @@ import json
 import datetime
 import time
 import logging
+import re
 
 import pandas as pd
 
@@ -34,45 +35,33 @@ class EcmwfApi():
             logging.debug('init station {} with base_time {}'.format(Station.name,Station.base_time))
 
 
-    def _is_dangerous_time(self):
-        # time is dangerous around 11:59 - 12:01  and 23:59 - 00:01
-        return ( (datetime.time(11, 59, 0) < datetime.datetime.now().time() < datetime.time(12,1,0)) or \
-                (datetime.time(23, 59, 0) < datetime.datetime.now().time() < datetime.time(0,1,0)) )
-
-    def _latest_run(self):
-        t_now = datetime.datetime.now()
-        t_now_rounded = pd.Timestamp.now().round(freq='12H').to_pydatetime()
-
-
-        while (self._is_dangerous_time()):
-            time.sleep(10)
-            logging.info('snooze 10s because time close to noon/midnight: {}'.format(datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')))
-
-        # rounding ends up in future
-        if t_now <= t_now_rounded:
-            t_now_rounded = t_now_rounded - datetime.timedelta(hours = 12) 
-
-        latest_run = t_now_rounded.strftime('%Y-%m-%dT%H:%M:%SZ')
-        logging.debug('latest run: {}'.format(latest_run))
-        return latest_run
+    def _extract_available_base_time(self,msg):
+        pattern = r"Current available base_time \['([^']+)'"
+        match = re.search(pattern, msg[0])
+        if match:
+            return match.group(1)
+        else:
+            raise ValueError('No available base_time found')
 
 
     def _latest_confirmed_run(self,station):
-
         eps_type = 'classical_plume'
         product = 'opencharts_meteogram'
 
-
-        # API cannot provide link for non-existing plot
-        try:
-            data = self._get_API_data_for_epsgram(station,self._latest_run(),product,eps_type)
-            return self._latest_run()
-        except ValueError:
-            latest_run_time_object = datetime.datetime.strptime(self._latest_run(),'%Y-%m-%dT%H:%M:%SZ') - datetime.timedelta(hours = 12)
-            return latest_run_time_object.strftime('%Y-%m-%dT%H:%M:%SZ')
+        data = self._get_API_data_for_epsgram_no_error_catch(station,'2024-03-01T00:00:00Z',product,eps_type)
+        return self._extract_available_base_time(data['error'])
 
 
-
+    def _get_API_data_for_epsgram_no_error_catch(self,station,base_time,product,eps_type):
+        get = '{}products/{}/?epsgram={}&base_time={}&station_name={}&lat={}&lon={}'.format(self._API_URL,
+                                                                                            product,
+                                                                                            eps_type,
+                                                                                            base_time,
+                                                                                            station.name,
+                                                                                            station.lat,
+                                                                                            station.lon)
+        result = requests.get(get)
+        return result.json()
     def _get_API_data_for_epsgram(self,station,base_time,product,eps_type):
 
         get = '{}products/{}/?epsgram={}&base_time={}&station_name={}&lat={}&lon={}'.format(self._API_URL,
@@ -83,6 +72,7 @@ class EcmwfApi():
                                                                                             station.lat,
                                                                                             station.lon)
         result = requests.get(get)
+
         if not result.ok:
             logging.debug('Forecast not available for {} at {}'.format(station.name,base_time))
             raise ValueError('Forecast not available for {} at {}'.format(station.name,base_time))
@@ -115,18 +105,17 @@ class EcmwfApi():
         return plots_for_broadcast
 
     def download_latest_plots(self):
-        if not self._is_dangerous_time():
-            for Station in self._stations:
-                    if self._new_forecast_available(Station):
+        for Station in self._stations:
+                if self._new_forecast_available(Station):
 
-                        # update base_time with latest confirmed run
-                        # base_time needs update before fetch
-                        # if not updated, bot sends endless plots to users
-                        base_time = self._latest_confirmed_run(Station)
-                        logging.debug('base_time for {} updated to {}'.format(Station.name,base_time))
-                        Station.base_time = base_time
+                    # update base_time with latest confirmed run
+                    # base_time needs update before fetch
+                    # if not updated, bot sends endless plots to users
+                    base_time = self._latest_confirmed_run(Station)
+                    logging.debug('base_time for {} updated to {}'.format(Station.name,base_time))
+                    Station.base_time = base_time
 
-                        self._download_plots(Station)
+                    self._download_plots(Station)
 
 
         # copy because we reset _plots_for_broadcast now
