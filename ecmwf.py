@@ -6,6 +6,8 @@ import logging
 import re
 import retry
 
+import pandas as pd
+
 
 d10_plume = 'classical_plume'
 d10_eps = 'classical_10d'
@@ -44,6 +46,20 @@ class EcmwfApi():
             raise ValueError('No available base_time found')
 
 
+    def _first_guess_base_time(self):
+        t_now = datetime.datetime.now()
+        t_now_rounded = pd.Timestamp.now().round(freq='12H').to_pydatetime()
+
+
+        # rounding ends up in future
+        if t_now <= t_now_rounded:
+            t_now_rounded = t_now_rounded - datetime.timedelta(hours = 12) 
+
+        latest_run = t_now_rounded.strftime('%Y-%m-%dT%H:%M:%SZ')
+        logging.debug('latest run: {}'.format(latest_run))
+
+        return latest_run
+
     def _latest_confirmed_run(self,station):
         # get base_time for each epsgram, only if all are available move to most recent
         product = 'opencharts_meteogram'
@@ -78,6 +94,9 @@ class EcmwfApi():
             try:
                 return result.json()
             except json.decoder.JSONDecodeError:
+                logging.debug(f'Result for {station.name} at {base_time}: {result.status_code}')
+                logging.debug(result.headers)
+                logging.debug(result.text)
                 logging.error('JSONDecodeError for {} at {}'.format(station.name,base_time))
                 raise ValueError('JSONDecodeError for {} at {}'.format(station.name,base_time))
 
