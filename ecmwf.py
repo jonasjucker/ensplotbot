@@ -164,32 +164,20 @@ class EcmwfApi():
             if self._new_forecast_available(Station):
 
                 # base_time for which all epsgrams are available
-                base_time = self._latest_confirmed_run(Station)
-                base_time_dt = datetime.datetime.strptime(
-                    base_time, self._time_format)
+                confirmed_base_time = self._latest_confirmed_run(Station)
 
-                # base time available from schema request
-                current_base_time_dt = datetime.datetime.strptime(
-                    self._base_time, self._time_format)
-
-                # last confirmed base_time for station
-                station_base_time_dt = datetime.datetime.strptime(
-                    Station.base_time, self._time_format)
-
-                # if base_time from latest_confirmed_run is different from current base_time
-                # or station base_time, send plots and upgrade base_time in station
-                if base_time_dt != current_base_time_dt or base_time_dt != station_base_time_dt:
+                if confirmed_base_time == self._base_time:
                     logging.debug('base_time for {} updated to {}'.format(
-                        Station.name, base_time))
+                        Station.name, confirmed_base_time))
 
                     # base_time needs update before fetch
                     # if not updated, bot sends endless plots to users
-                    Station.base_time = base_time
+                    Station.base_time = comfirmed_base_time
                     self._download_plots(Station)
                 else:
                     logging.debug(
                         'base_time for {} {} and {} are the same'.format(
-                            Station.name, Station.base_time, base_time))
+                            Station.name, Station.base_time, confirmed_base_time))
 
         # copy because we reset _plots_for_broadcast now
         plots_for_broadcast = self._plots_for_broadcast.copy()
