@@ -253,6 +253,6 @@ class PlotBot:
     def broadcast(self,plots):
         if plots:
             for station_name in plots:
-                for user_id in self._dp.bot_data[station_name]:
+                for user_id in self._dp.bot_data.get(station_name, set()):
                     self._send_plot_to_user(plots,station_name,user_id)
             logging.info('plots sent to all users')
