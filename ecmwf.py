@@ -28,7 +28,7 @@ class EcmwfApi():
         self._stations = [Station(**station_data) for station_data in station_config]
         self._epsgrams = ALL_EPSGRAM
         self._time_format = '%Y-%m-%dT%H:%M:%SZ'
-        self._base_time = self._fetch_available_base_time(fallback=True, timeshift=12)
+        self._base_time = self._fetch_available_base_time(fallback=True, timeshift=0)
 
         self._plots_for_broadcast = {}
 
