@@ -7,7 +7,7 @@
   lon: 9.83723
 
 - name: Elm
-  lat: 46.9167
+  lat: 46.919
   lon: 9.16667
 
 - name: Zürich
@@ -19,9 +19,9 @@
   lon: 8.8509
 
 - name: Winterthur
-  lat: 47.49
-  lon: 8.75
+  lat: 47.5056
+  lon: 8.72413
 
 - name: Locarno
-  lat: 46.1727
-  lon: 8.8014
+  lat: 46.1709
+  lon: 8.79953
