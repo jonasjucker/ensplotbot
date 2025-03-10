@@ -4,16 +4,16 @@ import time
 import yaml
 import sys
 
-
 from ecmwf import EcmwfApi
 from bot import PlotBot
+
 
 def stop(bot):
     bot.stop()
     sys.exit(1)
 
-def main():
 
+def main():
 
     parser = argparse.ArgumentParser()
 
@@ -26,28 +26,29 @@ def main():
                         type=str, \
                         help='Backup folder for the bot')
 
-    parser.add_argument('--log_level', 
-                        dest='log_level', 
-                        type=int, 
-                        default=logging.INFO, 
-                        choices=[logging.DEBUG, logging.INFO],
-                        help=f'set the logging level ({logging.DEBUG}: DEBUG, {logging.INFO}: INFO')
+    parser.add_argument(
+        '--log_level',
+        dest='log_level',
+        type=int,
+        default=logging.INFO,
+        choices=[logging.DEBUG, logging.INFO],
+        help=
+        f'set the logging level ({logging.DEBUG}: DEBUG, {logging.INFO}: INFO')
 
     args = parser.parse_args()
 
     # Enable logging
     logging.basicConfig(
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', 
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
         level=args.log_level,
     )
 
     logger = logging.getLogger(__name__)
-    
+
     with open('stations.yaml', 'r') as file:
         station_config = yaml.safe_load(file)
 
-
-    bot = PlotBot(args.bot_token,station_config,args.bot_backup)
+    bot = PlotBot(args.bot_token, station_config, args.bot_backup)
 
     ecmwf = EcmwfApi(station_config)
 
@@ -57,9 +58,11 @@ def main():
 
         try:
             if bot.has_new_subscribers_waiting():
-                bot.send_plots_to_new_subscribers(ecmwf.download_plots(bot.stations_of_new_subscribers()))
+                bot.send_plots_to_new_subscribers(
+                    ecmwf.download_plots(bot.stations_of_new_subscribers()))
             if bot.has_one_time_forecast_waiting():
-                bot.send_one_time_forecast(ecmwf.download_plots(bot.stations_of_one_time_request()))
+                bot.send_one_time_forecast(
+                    ecmwf.download_plots(bot.stations_of_one_time_request()))
             bot.broadcast(ecmwf.download_latest_plots())
             ecmwf.upgrade_basetime()
         except Exception as e:
@@ -73,6 +76,7 @@ def main():
         snooze = 5
         logging.debug(f'snooze {snooze}s ...')
         time.sleep(snooze)
+
 
 if __name__ == '__main__':
     main()
