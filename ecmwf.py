@@ -172,7 +172,7 @@ class EcmwfApi():
 
                     # base_time needs update before fetch
                     # if not updated, bot sends endless plots to users
-                    Station.base_time = comfirmed_base_time
+                    Station.base_time = confirmed_base_time
                     self._download_plots(Station)
                 else:
                     logging.debug(
