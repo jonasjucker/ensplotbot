@@ -177,7 +177,8 @@ class EcmwfApi():
                 else:
                     logging.debug(
                         'base_time for {} {} and {} are the same'.format(
-                            Station.name, Station.base_time, confirmed_base_time))
+                            Station.name, Station.base_time,
+                            confirmed_base_time))
 
         # copy because we reset _plots_for_broadcast now
         plots_for_broadcast = self._plots_for_broadcast.copy()
