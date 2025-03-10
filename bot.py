@@ -28,6 +28,7 @@ class PlotBot:
         self._filter_stations = Filters.regex("^(" + "|".join(self._station_names) + ")$")
         self.updater = Updater(token, persistence=persistence)
         self._dp = self.updater.dispatcher
+        self._stop = False
 
         self._dp.add_handler(CommandHandler('help',self._help))
         self._dp.add_handler(CommandHandler('cancel',self._cancel))
@@ -63,10 +64,21 @@ class PlotBot:
         self._dp.add_handler(subscription_handler)
         self._dp.add_handler(unsubscription_handler)
         self._dp.add_handler(one_time_forecast_handler)
+        self._dp.add_error_handler(self._error)
 
         # start the bot
         self.updater.start_polling()
 
+
+    def _error(self,update: Update, context: CallbackContext):
+        self._stop = True
+
+    def restart_required(self):
+        return self._stop
+
+    def stop(self):
+        self.updater.stop()
+        self._dp.stop()
 
     def _help(self,update: Update, context: CallbackContext):
 

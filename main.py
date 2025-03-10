@@ -2,10 +2,15 @@ import logging
 import argparse
 import time
 import yaml
+import sys
 
 
 from ecmwf import EcmwfApi
 from bot import PlotBot
+
+def stop(bot):
+    bot.stop()
+    sys.exit(1)
 
 def main():
 
@@ -50,12 +55,20 @@ def main():
 
     while True:
 
-        if bot.has_new_subscribers_waiting():
-            bot.send_plots_to_new_subscribers(ecmwf.download_plots(bot.stations_of_new_subscribers()))
-        if bot.has_one_time_forecast_waiting():
-            bot.send_one_time_forecast(ecmwf.download_plots(bot.stations_of_one_time_request()))
-        bot.broadcast(ecmwf.download_latest_plots())
-        ecmwf.upgrade_basetime()
+        try:
+            if bot.has_new_subscribers_waiting():
+                bot.send_plots_to_new_subscribers(ecmwf.download_plots(bot.stations_of_new_subscribers()))
+            if bot.has_one_time_forecast_waiting():
+                bot.send_one_time_forecast(ecmwf.download_plots(bot.stations_of_one_time_request()))
+            bot.broadcast(ecmwf.download_latest_plots())
+            ecmwf.upgrade_basetime()
+        except Exception as e:
+            logging.error(f'An error occured: {e}')
+            logging.error('Restart required')
+            stop(bot)
+
+        if bot.restart_required():
+            stop(bot)
 
         snooze = 5
         logging.debug(f'snooze {snooze}s ...')

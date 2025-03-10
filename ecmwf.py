@@ -99,6 +99,7 @@ class EcmwfApi():
     @retry.retry(tries=10, delay=3)
     def _get_from_API(self,link,raise_on_error=True):
         get = '{}{}'.format(self._API_URL,link)
+        logging.debug('GET {}'.format(get))
         result = requests.get(get)
 
         if not result.ok and raise_on_error:
@@ -120,7 +121,7 @@ class EcmwfApi():
                                                                                             base_time,
                                                                                             station.name,
                                                                                             station.lat,
-                                                                                            station.lon, raise_on_error=True)
+                                                                                            station.lon)
 
         return self._get_from_API(link,raise_on_error=raise_on_error)
 
