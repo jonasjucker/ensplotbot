@@ -96,7 +96,7 @@ class EcmwfApi():
             return base_time.pop()
 
 
-    @retry.retry(tries=3, delay=1)
+    @retry.retry(tries=10, delay=3)
     def _get_from_API(self,link,raise_on_error=True):
         get = '{}{}'.format(self._API_URL,link)
         result = requests.get(get)
@@ -185,10 +185,16 @@ class EcmwfApi():
     def _download_plots(self,Station):
             logging.info('Fetch plots for {}'.format(Station.name))
             plots = []
-            for type in self._epsgrams:
-                image_api =  self._request_epsgram_link_for_station(Station,type)
-                plots.append(self._save_image_of_station(image_api,Station,type))
+            try:
+                for type in self._epsgrams:
+                    image_api =  self._request_epsgram_link_for_station(Station,type)
+                    plots.append(self._save_image_of_station(image_api,Station,type))
+            except ValueError as e:
+                logging.warning('Error while fetching plots for {}, skipping...'.format(Station.name))
+                plots = []
+
             self._plots_for_broadcast[Station.name] = plots
+
 
     def _new_forecast_available(self,Station):
             return Station.base_time != self._base_time
