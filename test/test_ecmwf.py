@@ -112,18 +112,26 @@ def test_upgrade_base_time_if_api_request_fails(ecmwf):
         ecmwf.upgrade_basetime()
     assert ecmwf._base_time == base_time_shifted, "base_time was updated but should not have been"
 
+
 def test_new_forecast_available_for_same_basetimes(ecmwf):
     # station and ecmwd.base_time are set to the same value
     for Station in ecmwf._stations:
-        assert ecmwf._new_forecast_available(Station) == False, f"New forecast should not be available for {Station.name}"
+        assert ecmwf._new_forecast_available(
+            Station
+        ) == False, f"New forecast should not be available for {Station.name}"
+
 
 def test_new_forecast_available_for_different_basetimes(ecmwf):
-    ecmwf._base_time = ecmwf._fetch_available_base_time(fallback=True, timeshift=12)
+    ecmwf._base_time = ecmwf._fetch_available_base_time(fallback=True,
+                                                        timeshift=12)
     # station and ecmwd.base_time are set to different values
     for Station in ecmwf._stations:
-        assert ecmwf._new_forecast_available(Station) == True, f"New forecast should be available for {Station.name}"
+        assert ecmwf._new_forecast_available(
+            Station
+        ) == True, f"New forecast should be available for {Station.name}"
 
-@pytest.mark.parametrize("station", ['Tschiertschen','Elm'])
+
+@pytest.mark.parametrize("station", ['Tschiertschen', 'Elm'])
 def test_latest_confirmed_run_for(ecmwf, station):
     for Station in ecmwf._stations:
         if Station.name == station:
@@ -132,23 +140,28 @@ def test_latest_confirmed_run_for(ecmwf, station):
             try:
                 datetime.strptime(latest_run, ecmwf._time_format)
             except ValueError:
-                pytest.fail(f"latest_run '{latest_run}' is not a valid datetime")
+                pytest.fail(
+                    f"latest_run '{latest_run}' is not a valid datetime")
+
 
 @pytest.mark.parametrize("station", ['Winterthur'])
 def test_latest_confirmed_run_with_base_time_48_h_in_past_for(ecmwf, station):
     base_time_at_init = ecmwf._base_time
-    ecmwf._base_time = ecmwf._fetch_available_base_time(fallback=True, timeshift=48)
+    ecmwf._base_time = ecmwf._fetch_available_base_time(fallback=True,
+                                                        timeshift=48)
     for Station in ecmwf._stations:
         if Station.name == station:
             latest_run = ecmwf._latest_confirmed_run(Station)
-            assert  base_time_at_init != latest_run, "latest_confirmed_run should be in far past"
-            assert  ecmwf._base_time == latest_run, "latest_confirmed_run should be identical to base_time"
+            assert base_time_at_init != latest_run, "latest_confirmed_run should be in far past"
+            assert ecmwf._base_time == latest_run, "latest_confirmed_run should be identical to base_time"
+
 
 def test_latest_confirmed_run_with_base_time_for_api_fail(ecmwf):
-        for Station in ecmwf._stations:
-                Station.base_time = ecmwf._fetch_available_base_time(fallback=True, timeshift=24)
-                with patch.object(EcmwfApi,
-                                '_get_API_data_for_epsgram',
-                                side_effect=ValueError):
-                    latest_run = ecmwf._latest_confirmed_run(Station)
-                assert Station.base_time == latest_run, "latest_confirmed_run should be identical to base_time of station" 
+    for Station in ecmwf._stations:
+        Station.base_time = ecmwf._fetch_available_base_time(fallback=True,
+                                                             timeshift=24)
+        with patch.object(EcmwfApi,
+                          '_get_API_data_for_epsgram',
+                          side_effect=ValueError):
+            latest_run = ecmwf._latest_confirmed_run(Station)
+        assert Station.base_time == latest_run, "latest_confirmed_run should be identical to base_time of station"
