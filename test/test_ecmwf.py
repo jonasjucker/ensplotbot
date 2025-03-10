@@ -156,7 +156,7 @@ def test_latest_confirmed_run_with_base_time_48_h_in_past_for(ecmwf, station):
             assert ecmwf._base_time == latest_run, "latest_confirmed_run should be identical to base_time"
 
 
-def test_latest_confirmed_run_with_base_time_for_api_fail(ecmwf):
+def test_latest_confirmed_run_with_api_fail(ecmwf):
     for Station in ecmwf._stations:
         Station.base_time = ecmwf._fetch_available_base_time(fallback=True,
                                                              timeshift=24)
