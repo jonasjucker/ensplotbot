@@ -67,22 +67,20 @@ class EcmwfApi():
                 self._base_time))
             pass
 
-        self._base_time = self._fetch_available_base_time(fallback=True)
-
     def _fetch_available_base_time(self, fallback=False, timeshift=0):
         link = "schema/?product=opencharts_meteogram&package=openchart"
         try:
             run = self._get_from_API(
                 link)['paths']['/products/opencharts_meteogram/']['get'][
                     'parameters'][1]['schema']['default']
-            run_datetime = datetime.datetime.strptime(run, self._time_format)
-            run_datetime -= datetime.timedelta(hours=timeshift)
-            run = run_datetime.strftime(self._time_format)
         except ValueError:
             if fallback:
                 run = self._first_guess_base_time()
             else:
                 raise ValueError('No available base_time found')
+        run_datetime = datetime.datetime.strptime(run, self._time_format)
+        run_datetime -= datetime.timedelta(hours=timeshift)
+        run = run_datetime.strftime(self._time_format)
         return run
 
     def _latest_confirmed_run(self, station):
