@@ -27,7 +27,8 @@ class EcmwfApi():
         self._API_URL = "https://charts.ecmwf.int/opencharts-api/v1/" 
         self._stations = [Station(**station_data) for station_data in station_config]
         self._epsgrams = ALL_EPSGRAM
-        self._base_time = self._fetch_available_base_time(fallback=True)
+        self._time_format = '%Y-%m-%dT%H:%M:%SZ'
+        self._base_time = self._fetch_available_base_time(fallback=True, timeshift=12)
 
         self._plots_for_broadcast = {}
 
@@ -46,7 +47,7 @@ class EcmwfApi():
         if t_now <= t_now_rounded:
             t_now_rounded = t_now_rounded - datetime.timedelta(hours = 12) 
 
-        latest_run = t_now_rounded.strftime('%Y-%m-%dT%H:%M:%SZ')
+        latest_run = t_now_rounded.strftime(self._time_format)
         logging.debug('latest run: {}'.format(latest_run))
 
         return latest_run
@@ -64,10 +65,13 @@ class EcmwfApi():
 
         self._base_time = self._fetch_available_base_time(fallback=True)
 
-    def _fetch_available_base_time(self,fallback=False):
+    def _fetch_available_base_time(self,fallback=False, timeshift=0):
         link = "schema/?product=opencharts_meteogram&package=openchart"
         try:
             run = self._get_from_API(link)['paths']['/products/opencharts_meteogram/']['get']['parameters'][1]['schema']['default']
+            run_datetime = datetime.datetime.strptime(run, self._time_format)
+            run_datetime -= datetime.timedelta(hours=timeshift)
+            run = run_datetime.strftime(self._time_format)
         except ValueError:
             if fallback:
                 run = self._first_guess_base_time()
@@ -98,17 +102,18 @@ class EcmwfApi():
         result = requests.get(get)
 
         if not result.ok and raise_on_error:
-            raise ValueError('Forecast not available for {} at {}'.format(station.name,base_time))
+            raise ValueError('Request failed for {}'.format(get))
         else:
             if result.status_code == 403:
                 logging.info('403 Forbidden for {}'.format(get))
+                raise ValueError('403 Forbidden for {}'.format(get))
                 raise ValueError('403 Forbidden for {} at {}'.format(station.name,base_time))
             else:
                 try:
                     return result.json()
                 except json.decoder.JSONDecodeError:
                     logging.info('JSONDecodeError for {}'.format(get))
-                    raise ValueError('JSONDecodeError for {} at {}'.format(station.name,base_time))
+                    raise ValueError('JSONDecodeError for {}'.format(get))
 
     def _get_API_data_for_epsgram(self,station,base_time,eps_type,raise_on_error=True):
         link = 'products/opencharts_meteogram/?epsgram={}&base_time={}&station_name={}&lat={}&lon={}'.format( eps_type,
@@ -147,14 +152,27 @@ class EcmwfApi():
         for Station in self._stations:
                 if self._new_forecast_available(Station):
 
-                    # update base_time with latest confirmed run
-                    # base_time needs update before fetch
-                    # if not updated, bot sends endless plots to users
+                    # base_time for which all epsgrams are available
                     base_time = self._latest_confirmed_run(Station)
-                    if base_time != self._base_time:
+                    base_time_dt = datetime.datetime.strptime(base_time, self._time_format)
+
+                    # base time available from schema request
+                    current_base_time_dt = datetime.datetime.strptime(self._base_time, self._time_format)
+                    
+                    # last confirmed base_time for station
+                    station_base_time_dt = datetime.datetime.strptime(Station.base_time, self._time_format)
+
+                    # if base_time from latest_confirmed_run is different from current base_time
+                    # or station base_time, send plots and upgrade base_time in station
+                    if base_time_dt != current_base_time_dt or base_time_dt != station_base_time_dt:
                         logging.debug('base_time for {} updated to {}'.format(Station.name,base_time))
+
+                        # base_time needs update before fetch
+                        # if not updated, bot sends endless plots to users
                         Station.base_time = base_time
                         self._download_plots(Station)
+                    else:
+                        logging.debug('base_time for {} {} and {} are the same'.format(Station.name,Station.base_time,base_time))
 
 
         # copy because we reset _plots_for_broadcast now
