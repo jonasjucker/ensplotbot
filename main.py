@@ -57,6 +57,7 @@ def main():
     bot = PlotBot(args.bot_token, station_config, args.bot_backup)
 
     ecmwf = EcmwfApi(station_config)
+    ecmwf.override_base_time_from_init()
 
     logging.info('Enter infinite loop')
 

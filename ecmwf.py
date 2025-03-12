@@ -37,11 +37,19 @@ class EcmwfApi():
 
         self._plots_for_broadcast = {}
 
-        # populate stations with valid run
+        # for performance reasons we set to base_time from API-schema, can be wrong
+        # so we need to check if it is valid after the init of all stations
+        logging.info('base_time set to {}'.format(self._base_time))
         for Station in self._stations:
             Station.base_time = self._base_time
-            logging.debug('init {} with base_time {}'.format(
-                Station.name, Station.base_time))
+
+    def override_base_time_from_init(self):
+        for Station in self._stations:
+            latest_run = self._latest_confirmed_run(Station)
+            if latest_run != Station.base_time:
+                logging.info('Overriding {} base_time from {} to {}'.format(
+                    Station.name, Station.base_time, latest_run))
+                Station.base_time = latest_run
 
     def _first_guess_base_time(self):
         t_now = datetime.datetime.now()
@@ -71,7 +79,7 @@ class EcmwfApi():
         link = "schema/?product=opencharts_meteogram&package=openchart"
         try:
             run = self._get_from_API(
-                link)['paths']['/products/opencharts_meteogram/']['get'][
+                link, retry=False)['paths']['/products/opencharts_meteogram/']['get'][
                     'parameters'][1]['schema']['default']
         except ValueError:
             if fallback:
@@ -91,10 +99,13 @@ class EcmwfApi():
                 self._get_API_data_for_epsgram(station,
                                                self._base_time,
                                                eps_type,
-                                               raise_on_error=True)
+                                               raise_on_error=True,
+                                               retry=False)
                 base_time.add(self._base_time)
             except ValueError as e:
-                base_time.add(station.base_time)
+                # base time - 12h should be available
+                base_time_minus_12h = (datetime.datetime.strptime(self._base_time, self._time_format) - datetime.timedelta(hours=12)).strftime(self._time_format)
+                base_time.add(base_time_minus_12h)
 
         # if there are multiple base_time, take the oldest
         if len(base_time) > 1:
@@ -102,8 +113,21 @@ class EcmwfApi():
         else:
             return base_time.pop()
 
+    def _get_from_API(self,link, retry=True, raise_on_error=True):
+        if retry:
+            return self._get_from_API_retry(link, raise_on_error)
+        else:
+            return self._get_from_API_no_retry(link, raise_on_error)
+
+
+    def _get_from_API_no_retry(self, link, raise_on_error=True):
+        return self._get_with_request(link, raise_on_error)
+
     @retry.retry(tries=10, delay=3)
-    def _get_from_API(self, link, raise_on_error=True):
+    def _get_from_API_retry(self, link, raise_on_error=True):
+        return self._get_with_request(link, raise_on_error)
+
+    def _get_with_request(self, link, raise_on_error=True):
         get = '{}{}'.format(self._API_URL, link)
         logging.debug('GET {}'.format(get))
         result = requests.get(get)
@@ -114,8 +138,6 @@ class EcmwfApi():
             if result.status_code == 403:
                 logging.info('403 Forbidden for {}'.format(get))
                 raise ValueError('403 Forbidden for {}'.format(get))
-                raise ValueError('403 Forbidden for {} at {}'.format(
-                    station.name, base_time))
             else:
                 try:
                     return result.json()
@@ -127,17 +149,19 @@ class EcmwfApi():
                                   station,
                                   base_time,
                                   eps_type,
-                                  raise_on_error=True):
+                                  raise_on_error=True,
+                                  retry=True):
         link = 'products/opencharts_meteogram/?epsgram={}&base_time={}&station_name={}&lat={}&lon={}'.format(
             eps_type, base_time, station.name, station.lat, station.lon)
 
-        return self._get_from_API(link, raise_on_error=raise_on_error)
+        return self._get_from_API(link, raise_on_error=raise_on_error, retry=retry)
 
     def _request_epsgram_link_for_station(self, station, eps_type):
         data = self._get_API_data_for_epsgram(station,
                                               station.base_time,
                                               eps_type,
-                                              raise_on_error=True)
+                                              raise_on_error=True,
+                                              retry=True)
         return data["data"]["link"]["href"]
 
     def _save_image_of_station(self, image_api, station, eps_type):
