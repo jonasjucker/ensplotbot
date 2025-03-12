@@ -40,6 +40,7 @@ class PlotBot:
         self._dp = self.updater.dispatcher
         self._stop = False
 
+        self._dp.add_handler(CommandHandler('start', self._help))
         self._dp.add_handler(CommandHandler('help', self._help))
         self._dp.add_handler(CommandHandler('cancel', self._cancel))
 

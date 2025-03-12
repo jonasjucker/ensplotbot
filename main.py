@@ -12,6 +12,12 @@ def stop(bot):
     bot.stop()
     sys.exit(1)
 
+def restart_bot(bot, token, station_config, backup):
+    bot.stop()
+    bot = PlotBot(token, station_config, backup)
+    return bot
+
+
 
 def main():
 
@@ -71,7 +77,8 @@ def main():
             stop(bot)
 
         if bot.restart_required():
-            stop(bot)
+            bot = restart_bot(bot, args.bot_token, station_config, args.bot_backup)
+            logging.info('Bot restarted')
 
         snooze = 5
         logging.debug(f'snooze {snooze}s ...')
