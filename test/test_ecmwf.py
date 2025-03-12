@@ -166,3 +166,20 @@ def test_latest_confirmed_run_with_api_fail(ecmwf):
                           side_effect=ValueError):
             latest_run = ecmwf._latest_confirmed_run(Station)
         assert correct_latest_confirmed_run == latest_run, "latest_confirmed_run should be identical to base_time - 12 of ecmwf"
+
+def test_override_base_time_from_init_past(ecmwf):
+    past = '2021-01-01T00:00:00Z'
+    for Station in ecmwf._stations:
+        Station.base_time = past
+    ecmwf.override_base_time_from_init()
+    for Station in ecmwf._stations:
+        assert Station.base_time != past, "base_time of station should be updated"
+
+def test_override_base_time_from_init_future(ecmwf):
+    future = ecmwf._fetch_available_base_time(fallback=True, timeshift=-48)
+    for Station in ecmwf._stations:
+        Station.base_time = future
+    ecmwf.override_base_time_from_init()
+    for Station in ecmwf._stations:
+        # we rely here the API never returns a base_time in the future
+        assert Station.base_time == future, "base_time of station is in future, should not be updated"

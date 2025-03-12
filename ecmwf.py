@@ -46,7 +46,7 @@ class EcmwfApi():
     def override_base_time_from_init(self):
         for Station in self._stations:
             latest_run = self._latest_confirmed_run(Station)
-            if latest_run != Station.base_time:
+            if latest_run > Station.base_time:
                 logging.info('Overriding {} base_time from {} to {}'.format(
                     Station.name, Station.base_time, latest_run))
                 Station.base_time = latest_run
@@ -123,7 +123,7 @@ class EcmwfApi():
     def _get_from_API_no_retry(self, link, raise_on_error=True):
         return self._get_with_request(link, raise_on_error)
 
-    @retry.retry(tries=10, delay=3)
+    @retry.retry(tries=10, delay=1)
     def _get_from_API_retry(self, link, raise_on_error=True):
         return self._get_with_request(link, raise_on_error)
 
