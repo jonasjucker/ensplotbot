@@ -13,6 +13,12 @@ def stop(bot):
     sys.exit(1)
 
 
+def restart_bot(bot, token, station_config, backup):
+    bot.stop()
+    bot = PlotBot(token, station_config, backup)
+    return bot
+
+
 def main():
 
     parser = argparse.ArgumentParser()
@@ -51,6 +57,7 @@ def main():
     bot = PlotBot(args.bot_token, station_config, args.bot_backup)
 
     ecmwf = EcmwfApi(station_config)
+    ecmwf.override_base_time_from_init()
 
     logging.info('Enter infinite loop')
 
@@ -71,7 +78,9 @@ def main():
             stop(bot)
 
         if bot.restart_required():
-            stop(bot)
+            bot = restart_bot(bot, args.bot_token, station_config,
+                              args.bot_backup)
+            logging.info('Bot restarted')
 
         snooze = 5
         logging.debug(f'snooze {snooze}s ...')
