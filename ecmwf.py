@@ -79,8 +79,8 @@ class EcmwfApi():
         link = "schema/?product=opencharts_meteogram&package=openchart"
         try:
             run = self._get_from_API(
-                link, retry=False)['paths']['/products/opencharts_meteogram/']['get'][
-                    'parameters'][1]['schema']['default']
+                link, retry=False)['paths']['/products/opencharts_meteogram/'][
+                    'get']['parameters'][1]['schema']['default']
         except ValueError:
             if fallback:
                 run = self._first_guess_base_time()
@@ -104,7 +104,10 @@ class EcmwfApi():
                 base_time.add(self._base_time)
             except ValueError as e:
                 # base time - 12h should be available
-                base_time_minus_12h = (datetime.datetime.strptime(self._base_time, self._time_format) - datetime.timedelta(hours=12)).strftime(self._time_format)
+                base_time_minus_12h = (datetime.datetime.strptime(
+                    self._base_time, self._time_format) -
+                                       datetime.timedelta(hours=12)).strftime(
+                                           self._time_format)
                 base_time.add(base_time_minus_12h)
 
         # if there are multiple base_time, take the oldest
@@ -113,12 +116,11 @@ class EcmwfApi():
         else:
             return base_time.pop()
 
-    def _get_from_API(self,link, retry=True, raise_on_error=True):
+    def _get_from_API(self, link, retry=True, raise_on_error=True):
         if retry:
             return self._get_from_API_retry(link, raise_on_error)
         else:
             return self._get_from_API_no_retry(link, raise_on_error)
-
 
     def _get_from_API_no_retry(self, link, raise_on_error=True):
         return self._get_with_request(link, raise_on_error)
@@ -154,7 +156,9 @@ class EcmwfApi():
         link = 'products/opencharts_meteogram/?epsgram={}&base_time={}&station_name={}&lat={}&lon={}'.format(
             eps_type, base_time, station.name, station.lat, station.lon)
 
-        return self._get_from_API(link, raise_on_error=raise_on_error, retry=retry)
+        return self._get_from_API(link,
+                                  raise_on_error=raise_on_error,
+                                  retry=retry)
 
     def _request_epsgram_link_for_station(self, station, eps_type):
         data = self._get_API_data_for_epsgram(station,

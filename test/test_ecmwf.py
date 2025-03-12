@@ -158,14 +158,15 @@ def test_latest_confirmed_run_with_base_time_48_h_in_past_for(ecmwf, station):
 
 def test_latest_confirmed_run_with_api_fail(ecmwf):
     # base_time of ecmwf, but shifted by 12 hours
-    correct_latest_confirmed_run = ecmwf._fetch_available_base_time(fallback=True,
-                                                       timeshift=12)
+    correct_latest_confirmed_run = ecmwf._fetch_available_base_time(
+        fallback=True, timeshift=12)
     for Station in ecmwf._stations:
         with patch.object(EcmwfApi,
                           '_get_API_data_for_epsgram',
                           side_effect=ValueError):
             latest_run = ecmwf._latest_confirmed_run(Station)
         assert correct_latest_confirmed_run == latest_run, "latest_confirmed_run should be identical to base_time - 12 of ecmwf"
+
 
 def test_override_base_time_from_init_past(ecmwf):
     past = '2021-01-01T00:00:00Z'
@@ -174,6 +175,7 @@ def test_override_base_time_from_init_past(ecmwf):
     ecmwf.override_base_time_from_init()
     for Station in ecmwf._stations:
         assert Station.base_time != past, "base_time of station should be updated"
+
 
 def test_override_base_time_from_init_future(ecmwf):
     future = ecmwf._fetch_available_base_time(fallback=True, timeshift=-48)
