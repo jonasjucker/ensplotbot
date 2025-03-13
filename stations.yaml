@@ -2,6 +2,30 @@
   lat: 46.8177
   lon: 9.60638
 
+- name: Basel
+  lat: 47.5584
+  lon: 7.57327
+
+- name: Locarno
+  lat: 46.1709
+  lon: 8.79953
+  
+- name: Zürich
+  lat: 47.3667
+  lon: 8.55
+  
+- name: Winterthur
+  lat: 47.5056
+  lon: 8.72413
+  
+- name: Embrach
+  lat: 47.5056
+  lon: 8.59406
+
+- name: Disentis
+  lat: 46.7034
+  lon: 8.8509
+
 - name: Davos
   lat: 46.8043
   lon: 9.83723
@@ -9,19 +33,3 @@
 - name: Elm
   lat: 46.919
   lon: 9.16667
-
-- name: Zürich
-  lat: 47.3667
-  lon: 8.55
-
-- name: Disentis
-  lat: 46.7034
-  lon: 8.8509
-
-- name: Winterthur
-  lat: 47.5056
-  lon: 8.72413
-
-- name: Locarno
-  lat: 46.1709
-  lon: 8.79953
