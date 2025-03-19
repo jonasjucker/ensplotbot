@@ -13,9 +13,10 @@ def stop(bot):
     sys.exit(1)
 
 
-def restart_bot(bot, token, station_config, backup):
-    bot.stop()
-    bot = PlotBot(token, station_config, backup)
+def start_bot(bot, token, station_config, backup,admin_id, restart=False):
+    if restart:
+        bot.stop()
+    bot = PlotBot(token, station_config, backup, admin_id)
     return bot
 
 
@@ -31,6 +32,11 @@ def main():
                         dest='bot_backup', \
                         type=str, \
                         help='Backup folder for the bot')
+
+    parser.add_argument('--admin_id',
+                        dest='admin_id', \
+                        type=int, \
+                        help='Telegram ID of the admin')
 
     parser.add_argument(
         '--log_level',
@@ -54,7 +60,7 @@ def main():
     with open('stations.yaml', 'r') as file:
         station_config = yaml.safe_load(file)
 
-    bot = PlotBot(args.bot_token, station_config, args.bot_backup)
+    bot = start_bot(None,args.bot_token, station_config, args.bot_backup, args.admin_id, restart=False)
 
     ecmwf = EcmwfApi(station_config)
     ecmwf.override_base_time_from_init()
@@ -78,8 +84,8 @@ def main():
             stop(bot)
 
         if bot.restart_required():
-            bot = restart_bot(bot, args.bot_token, station_config,
-                              args.bot_backup)
+            bot = start_bot(bot, args.bot_token, station_config,
+                              args.bot_backup, args.admin_id, restart=True)
             logging.info('Bot restarted')
 
         snooze = 5
