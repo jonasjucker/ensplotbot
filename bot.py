@@ -19,7 +19,7 @@ TIMEOUT = 60
 
 class PlotBot:
 
-    def __init__(self, token, station_config, backup):
+    def __init__(self, token, station_config, backup, admin_id):
 
         # Create the Updater and pass it your bot's token.
         persistence = PicklePersistence(
@@ -39,6 +39,7 @@ class PlotBot:
         self.updater = Updater(token, persistence=persistence)
         self._dp = self.updater.dispatcher
         self._stop = False
+        self._admin_id = admin_id
 
         self._dp.add_handler(CommandHandler('start', self._help))
         self._dp.add_handler(CommandHandler('help', self._help))
@@ -84,6 +85,8 @@ class PlotBot:
         self._dp.add_handler(unsubscription_handler)
         self._dp.add_handler(one_time_forecast_handler)
         self._dp.add_error_handler(self._error)
+
+        logging.info(self._collect_bot_data())
 
         # start the bot
         self.updater.start_polling()
@@ -181,6 +184,11 @@ class PlotBot:
 
         return ConversationHandler.END
 
+    def _log_stats_and_send_to_admin(self):
+        stats = self._collect_bot_data()
+        logging.info(stats)
+        self._dp.bot.send_message(chat_id=self._admin_id, text=stats)
+
     def _subscribe_for_station(self, update: Update,
                                context: CallbackContext) -> int:
         user = update.message.from_user
@@ -193,6 +201,8 @@ class PlotBot:
         self._register_subscription(user, msg_text, context)
 
         logging.info(f' {user.first_name} subscribed for Station {msg_text}')
+
+        self._log_stats_and_send_to_admin()
 
         return ConversationHandler.END
 
@@ -220,15 +230,11 @@ class PlotBot:
 
         self._subscriptions[station].add(user.id)
 
-        logging.debug(context.bot_data.setdefault(station, set()))
-
     def _revoke_subscription(self, user, station, context):
 
         # remove user to subscription list for given station
         if user.id in context.bot_data[station]:
             context.bot_data[station].remove(user.id)
-
-        logging.debug(context.bot_data.setdefault(station, set()))
 
     def _unsubscribe(self, update: Update, context: CallbackContext):
         reply_text = "You sucessfully unsubscribed."
@@ -240,8 +246,6 @@ class PlotBot:
                                     set())  # create key if not present
         if user_id in context.bot_data['user_id']:
             context.bot_data['user_id'].remove(user_id)
-
-        logging.debug(context.bot_data.setdefault('user_id', set()))
 
     def _cancel(self, update: Update, context: CallbackContext) -> int:
         user = update.message.from_user
@@ -271,14 +275,14 @@ class PlotBot:
         ]
 
     def _send_plot_to_user(self, plots, station_name, user_id):
-        logging.debug(user_id)
+        logging.debug(f'Send plot to user: {user_id}')
         try:
             self._dp.bot.send_message(chat_id=user_id, text=station_name)
             for plot in plots[station_name]:
                 self._dp.bot.send_photo(chat_id=user_id,
                                         photo=open(plot, 'rb'))
         except:
-            logging.info(f'Could not send plot to user: {user_id}')
+            logging.warning(f'Could not send plot to user: {user_id}')
 
     def _send_plots(self, plots, requests):
         for station_name, users in requests.items():
@@ -302,6 +306,19 @@ class PlotBot:
             station: set()
             for station in self._station_names
         }
+
+    def _collect_bot_data(self):
+        stats = []
+        stats.append('')
+        stats.append('Bot stats:')
+        for station, users in self._dp.bot_data.items():
+            stats.append(f'Station {station} has {len(users)} subscribers')
+        unique_users = set()
+        for users in self._dp.bot_data.values():
+            unique_users.update(users)
+        stats.append(f'Total subscribers: {len(unique_users)}')
+        stats_str = "\n".join(stats)
+        return stats_str
 
     def broadcast(self, plots):
         if plots:
