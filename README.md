@@ -1,6 +1,6 @@
-# EnsPlotBot
+# [EnsPlotBot](https://t.me/EnsPlotBot)
 
-[EnsPlotBot](https://t.me/EnsPlotBot) is a Telegram bot that provides ECMWF meteograms for various locations in Switzerland. The bot allows users to subscribe to daily forecasts or request one-time forecasts for specific locations.
+I am a Telegram bot that provides ECMWF meteograms for various locations in Switzerland. Users can subscribe to daily forecasts or request one-time forecasts for specific locations.
 
 <img src="pics/Bern_classical_10d.png" width="300">  <img src="pics/Bern_classical_15d.png" width="300"> <img src="pics/Bern_classical_plume.png" width="300">
 
