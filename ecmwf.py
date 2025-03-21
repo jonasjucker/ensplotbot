@@ -20,8 +20,9 @@ class EcmwfApi():
 
         class Station():
 
-            def __init__(self, name, lat, lon, region):
+            def __init__(self, name, lat, lon, region, api_name=None):
                 self.name = name
+                self.api_name = name if api_name is None else api_name
                 self.lat = lat
                 self.lon = lon
                 self.region = region
@@ -155,7 +156,7 @@ class EcmwfApi():
                                   raise_on_error=True,
                                   retry=True):
         link = 'products/opencharts_meteogram/?epsgram={}&base_time={}&station_name={}&lat={}&lon={}'.format(
-            eps_type, base_time, station.name, station.lat, station.lon)
+            eps_type, base_time, station.api_name, station.lat, station.lon)
 
         return self._get_from_API(link,
                                   raise_on_error=raise_on_error,

@@ -27,6 +27,9 @@ def test_station_config_has_valid_entries(station_config):
     for station in station_config:
         assert 'name' in station and isinstance(
             station['name'], str), f'{station["name"]} is not a string'
+        if 'api_name' in station:
+            assert 'api_name' in station and isinstance(
+                station['api_name'], str), f'{station["api_name"]} is not a string'
         assert 'lat' in station and isinstance(
             station['lat'], float), f'{station["lat"]} is not a float'
         assert 'lon' in station and isinstance(
@@ -37,8 +40,8 @@ def test_station_config_has_valid_entries(station_config):
 
 def test_station_config_has_valid_region(station_config):
     regions = [
-        'Grisons', 'Glarus', 'Zurich', 'Basilea', 'Ticino', "Suisse Romande",
-        "Central Switzerland", "Valais", "Canton Berne"
+        'Grisons', 'Glarus', 'Zurich', 'Basilea', 'Ticino', "Romandie",
+        "Central Switzerland", "Valais", "Canton Berne", "Eastern Switzerland", "Aargau/Solothurn"
     ]
     for station in station_config:
         assert station[
@@ -163,7 +166,7 @@ def test_latest_confirmed_run_for(ecmwf, station):
                     f"latest_run '{latest_run}' is not a valid datetime")
 
 
-@pytest.mark.parametrize("station", ['Winterthur'])
+@pytest.mark.parametrize("station", ['Winterthur','Geneva'])
 def test_latest_confirmed_run_with_base_time_48_h_in_past_for(ecmwf, station):
     base_time_at_init = ecmwf._base_time
     ecmwf._base_time = ecmwf._fetch_available_base_time(fallback=True,
