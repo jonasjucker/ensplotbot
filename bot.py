@@ -3,7 +3,6 @@ import time
 import os
 
 from telegram import ReplyKeyboardMarkup, Update, ReplyKeyboardRemove
-from telegram.constants import PARSEMODE_MARKDOWN_V2 as MARKDOWN
 from telegram.ext import (
     CommandHandler,
     MessageHandler,
