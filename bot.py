@@ -51,7 +51,10 @@ class PlotBot:
         self.updater = Updater(token, persistence=persistence)
         self._dp = self.updater.dispatcher
         # initialize bot_data with empty set for each station if not present
-        [self._dp.bot_data.setdefault(station, set()) for station in self._station_names]
+        [
+            self._dp.bot_data.setdefault(station, set())
+            for station in self._station_names
+        ]
         self._stop = False
         self._admin_id = admin_id
 
