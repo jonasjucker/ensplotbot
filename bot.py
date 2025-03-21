@@ -13,7 +13,8 @@ from telegram.ext import (
     CallbackContext,
 )
 
-STATION_SELECT_ONE_TIME, STATION_SELECT_SUBSCRIBE, ONE_TIME, SUBSCRIBE, UNSUBSCRIBE = range(5)
+STATION_SELECT_ONE_TIME, STATION_SELECT_SUBSCRIBE, ONE_TIME, SUBSCRIBE, UNSUBSCRIBE = range(
+    5)
 TIMEOUT = 60
 
 
@@ -25,8 +26,14 @@ class PlotBot:
         persistence = PicklePersistence(
             filename=os.path.join(backup, 'bot.pkl'))
         self._station_names = [station["name"] for station in station_config]
-        self._region_of_stations = {station["name"]: station["region"] for station in station_config}
-        self._station_regions = {station["region"] for station in station_config}
+        self._region_of_stations = {
+            station["name"]: station["region"]
+            for station in station_config
+        }
+        self._station_regions = {
+            station["region"]
+            for station in station_config
+        }
         self._subscriptions = {
             station: set()
             for station in self._station_names
@@ -39,8 +46,8 @@ class PlotBot:
                                               "|".join(self._station_names) +
                                               ")$")
         self._filter_regions = Filters.regex("^(" +
-                                              "|".join(self._station_regions) +
-                                              ")$")
+                                             "|".join(self._station_regions) +
+                                             ")$")
         self.updater = Updater(token, persistence=persistence)
         self._dp = self.updater.dispatcher
         self._stop = False
@@ -51,12 +58,12 @@ class PlotBot:
         self._dp.add_handler(CommandHandler('cancel', self._cancel))
 
         subscription_handler = ConversationHandler(
-            entry_points=[CommandHandler('subscribe', self._choose_all_region)],
+            entry_points=[
+                CommandHandler('subscribe', self._choose_all_region)
+            ],
             states={
-                STATION_SELECT_SUBSCRIBE: [
-                    MessageHandler(self._filter_regions,
-                                   self._choose_station)
-                ],
+                STATION_SELECT_SUBSCRIBE:
+                [MessageHandler(self._filter_regions, self._choose_station)],
                 SUBSCRIBE: [
                     MessageHandler(self._filter_stations,
                                    self._subscribe_for_station)
@@ -126,6 +133,7 @@ class PlotBot:
             station for station, users in context.bot_data.items()
             if user_id in users
         ]
+
     def _choose_station(self, update: Update, context: CallbackContext) -> int:
         region = update.message.text
         station_of_region = self._get_station_names_for_region(region)
@@ -144,17 +152,21 @@ class PlotBot:
 
         return SUBSCRIBE if not_subscribed_for_all_stations else ConversationHandler.END
 
-    def _choose_all_region(self, update: Update, context: CallbackContext) -> int:
+    def _choose_all_region(self, update: Update,
+                           context: CallbackContext) -> int:
         entry_point = update.message.text
         logging.error(f'entry_point: {entry_point}')
 
         self._send_region_keyboard(update,
-                                    [name for name in self._station_regions])
+                                   [name for name in self._station_regions])
 
         return STATION_SELECT_ONE_TIME if entry_point == '/plots' else STATION_SELECT_SUBSCRIBE
 
     def _get_station_names_for_region(self, region) -> list[str]:
-        return [name for name in self._station_names if self._region_of_stations[name] == region]
+        return [
+            name for name in self._station_names
+            if self._region_of_stations[name] == region
+        ]
 
     def _choose_all_station(self, update: Update,
                             context: CallbackContext) -> int:
@@ -195,9 +207,8 @@ class PlotBot:
             )
             return True
         else:
-            update.message.reply_text(
-                f"Sorry, no more {type}s for you here",
-                reply_markup=ReplyKeyboardRemove())
+            update.message.reply_text(f"Sorry, no more {type}s for you here",
+                                      reply_markup=ReplyKeyboardRemove())
             return False
 
     def _send_station_keyboard(self, update: Update, station_names: list[str]):

@@ -34,15 +34,19 @@ def test_station_config_has_valid_entries(station_config):
         assert 'region' in station and isinstance(
             station['region'], str), f'{station["region"]} is not a string'
 
+
 def test_station_config_has_valid_region(station_config):
     regions = ['Grisons', 'Glarus', 'Zurich', 'Basilea', 'Ticino']
     for station in station_config:
-        assert station['region'] in regions, f"{station['region']} is not a valid region"
+        assert station[
+            'region'] in regions, f"{station['region']} is not a valid region"
+
 
 def test_station_config_has_no_conflict_with_name_and_region(station_config):
-    names = { station['name'] for station in station_config }
+    names = {station['name'] for station in station_config}
     for station in station_config:
-        assert station['region'] not in names, f"{station['region']} is already a station name"
+        assert station[
+            'region'] not in names, f"{station['region']} is already a station name"
 
 
 def test_ecmwf_api_init_with_station_config(station_config):
