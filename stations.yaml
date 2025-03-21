@@ -19,6 +19,44 @@
   lat: 47.3471
   lon: 8.72091
 
+# Eastern Switzerland
+- name: St. Gallen
+  api_name: Sankt+Gallen
+  region: Eastern Switzerland
+  lat: 47.4239
+  lon: 9.37477
+
+- name: Appenzell
+  region: Eastern Switzerland
+  lat: 47.331
+  lon: 9.40996
+
+- name: Frauenfeld
+  region: Eastern Switzerland
+  lat: 47.5578
+  lon: 8.89893
+
+# Aargau/Solothurn
+- name: Aarau
+  region: Aargau/Solothurn
+  lat: 47.3925
+  lon: 8.04422
+
+- name: Solothurn
+  region: Aargau/Solothurn
+  lat: 47.2079
+  lon: 7.53714
+
+- name: Olten
+  region: Aargau/Solothurn
+  lat: 47.35
+  lon: 7.90329
+
+- name: Baden
+  region: Aargau/Solothurn
+  lat: 47.4733
+  lon: 8.30592
+
 # Grisons
 - name: Chur
   region: Grisons
@@ -40,6 +78,17 @@
   lat: 46.8177
   lon: 9.60638
 
+- name: St. Moritz
+  api_name: St.+Moritz
+  region: Grisons
+  lat: 46.4994
+  lon: 9.84327
+
+- name: Arosa
+  region: Grisons
+  lat: 46.7779
+  lon: 9.67621
+
 - name: Disentis
   region: Grisons
   lat: 46.7034
@@ -50,6 +99,11 @@
   region: Basilea
   lat: 47.5584
   lon: 7.57327
+
+- name: Liestal
+  region: Basilea
+  lat: 47.485
+  lon: 7.732
 
 # Ticino
 - name: Locarno
@@ -83,23 +137,52 @@
   lat: 46.9416
   lon: 8.99643
 
-# Suisse Romande
+# Romandie
 - name: Lausanne
-  region: Suisse Romande
+  region: Romandie
   lat: 46.516
   lon: 6.63282
 
 - name: Fribourg
-  region: Suisse Romande
+  region: Romandie
   lat: 46.8024 
   lon: 7.15128
 
+- name: Delemont
+  api_name: Del%C3%A9mont
+  region: Romandie
+  lat: 47.3649
+  lon: 7.34453
+
 - name: Montreux
-  region: Suisse Romande
+  region: Romandie
   lat: 46.433
   lon: 6.91143
 
+- name: Geneva
+  api_name: Gen%C3%A8ve 
+  region: Romandie
+  lat: 46.2022
+  lon: 6.14569
+
+- name: Neuchatel
+  api_name: Neuch%C3%A2tel
+  region: Romandie
+  lat: 46.9918
+  lon: 6.931
+
+- name: Biel/Bienne
+  api_name: Biel%2FBienne
+  region: Romandie
+  lat: 47.1371
+  lon: 7.24608
+
 # Central Switzerland
+- name: Zug
+  region: Central Switzerland
+  lat: 47.1724
+  lon: 8.51745
+
 - name: Luzern
   region: Central Switzerland
   lat: 47.0505
