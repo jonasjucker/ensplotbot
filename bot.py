@@ -13,7 +13,7 @@ from telegram.ext import (
     CallbackContext,
 )
 
-ONE_TIME, SUBSCRIBE, UNSUBSCRIBE = range(3)
+STATION_SELECT_ONE_TIME, STATION_SELECT_SUBSCRIBE, ONE_TIME, SUBSCRIBE, UNSUBSCRIBE = range(5)
 TIMEOUT = 60
 
 
@@ -25,6 +25,8 @@ class PlotBot:
         persistence = PicklePersistence(
             filename=os.path.join(backup, 'bot.pkl'))
         self._station_names = [station["name"] for station in station_config]
+        self._region_of_stations = {station["name"]: station["region"] for station in station_config}
+        self._station_regions = {station["region"] for station in station_config}
         self._subscriptions = {
             station: set()
             for station in self._station_names
@@ -36,6 +38,9 @@ class PlotBot:
         self._filter_stations = Filters.regex("^(" +
                                               "|".join(self._station_names) +
                                               ")$")
+        self._filter_regions = Filters.regex("^(" +
+                                              "|".join(self._station_regions) +
+                                              ")$")
         self.updater = Updater(token, persistence=persistence)
         self._dp = self.updater.dispatcher
         self._stop = False
@@ -46,8 +51,12 @@ class PlotBot:
         self._dp.add_handler(CommandHandler('cancel', self._cancel))
 
         subscription_handler = ConversationHandler(
-            entry_points=[CommandHandler('subscribe', self._choose_station)],
+            entry_points=[CommandHandler('subscribe', self._choose_all_region)],
             states={
+                STATION_SELECT_SUBSCRIBE: [
+                    MessageHandler(self._filter_regions,
+                                   self._choose_station)
+                ],
                 SUBSCRIBE: [
                     MessageHandler(self._filter_stations,
                                    self._subscribe_for_station)
@@ -58,8 +67,12 @@ class PlotBot:
         )
 
         one_time_forecast_handler = ConversationHandler(
-            entry_points=[CommandHandler('plots', self._choose_all_station)],
+            entry_points=[CommandHandler('plots', self._choose_all_region)],
             states={
+                STATION_SELECT_ONE_TIME: [
+                    MessageHandler(self._filter_regions,
+                                   self._choose_all_station)
+                ],
                 ONE_TIME: [
                     MessageHandler(self._filter_stations,
                                    self._request_one_time_forecast_for_station)
@@ -106,33 +119,49 @@ class PlotBot:
         greetings = "Hi! I am OpenEns. I supply you with the latest ECWMF meteograms. \
                     The forecast is usually available at 8:00 for the 00 UTC run and at 20:00 for the 12 UTC run."
 
-        update.message.reply_text(greetings, )
+        update.message.reply_text(greetings)
 
-    def _choose_station(self, update: Update, context: CallbackContext) -> int:
-        user_id = update.message.chat_id
-
-        # Get the stations that the user has already subscribed to
-        subscribed_stations = [
+    def _get_subscriptions_of_user(self, user_id, context) -> list[str]:
+        return [
             station for station, users in context.bot_data.items()
             if user_id in users
         ]
+    def _choose_station(self, update: Update, context: CallbackContext) -> int:
+        region = update.message.text
+        station_of_region = self._get_station_names_for_region(region)
+
+        user_id = update.message.chat_id
+
+        # Get the stations that the user has already subscribed to
+        subscribed_stations = self._get_subscriptions_of_user(user_id, context)
 
         # Only include stations that the user has not already subscribed to
         not_subscribed_for_all_stations = self._send_station_keyboard(
             update, [
-                name for name in self._station_names
+                name for name in station_of_region
                 if name not in subscribed_stations
             ])
 
         return SUBSCRIBE if not_subscribed_for_all_stations else ConversationHandler.END
 
+    def _choose_all_region(self, update: Update, context: CallbackContext) -> int:
+        entry_point = update.message.text
+        logging.error(f'entry_point: {entry_point}')
+
+        self._send_region_keyboard(update,
+                                    [name for name in self._station_regions])
+
+        return STATION_SELECT_ONE_TIME if entry_point == '/plots' else STATION_SELECT_SUBSCRIBE
+
+    def _get_station_names_for_region(self, region) -> list[str]:
+        return [name for name in self._station_names if self._region_of_stations[name] == region]
+
     def _choose_all_station(self, update: Update,
                             context: CallbackContext) -> int:
-        user_id = update.message.chat_id
+        region = update.message.text
 
-        # Only include stations that the user has not already subscribed to
         self._send_station_keyboard(update,
-                                    [name for name in self._station_names])
+                                    self._get_station_names_for_region(region))
 
         return ONE_TIME
 
@@ -140,10 +169,7 @@ class PlotBot:
         user_id = update.message.chat_id
 
         # Get the stations that the user has already subscribed to
-        subscribed_stations = [
-            station for station, users in context.bot_data.items()
-            if user_id in users
-        ]
+        subscribed_stations = self._get_subscriptions_of_user(user_id, context)
 
         # Only include stations that the user has already subscribed to
         subscription_present = self._send_station_keyboard(
@@ -154,11 +180,14 @@ class PlotBot:
 
         return UNSUBSCRIBE if subscription_present else ConversationHandler.END
 
-    def _send_station_keyboard(self, update: Update, station_names: list[str]):
-        reply_keyboard = [[name] for name in station_names]
+    def _send_region_keyboard(self, update: Update, region_names: list[str]):
+        return self._send_keyboard(update, region_names, 'region')
+
+    def _send_keyboard(self, update: Update, names: list[str], type: str):
+        reply_keyboard = [[name] for name in names]
 
         if reply_keyboard:
-            reply_text = "Choose a station"
+            reply_text = f'Choose a {type}'
             update.message.reply_text(
                 reply_text,
                 reply_markup=ReplyKeyboardMarkup(reply_keyboard,
@@ -166,9 +195,13 @@ class PlotBot:
             )
             return True
         else:
-            update.message.reply_text("Sorry, no more stations for you here",
-                                      reply_markup=ReplyKeyboardRemove())
+            update.message.reply_text(
+                f"Sorry, no more {type}s for you here",
+                reply_markup=ReplyKeyboardRemove())
             return False
+
+    def _send_station_keyboard(self, update: Update, station_names: list[str]):
+        return self._send_keyboard(update, station_names, 'station')
 
     def _unsubscribe_for_station(self, update: Update,
                                  context: CallbackContext) -> int:
