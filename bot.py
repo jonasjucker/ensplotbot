@@ -3,6 +3,7 @@ import time
 import os
 
 from telegram import ReplyKeyboardMarkup, Update, ReplyKeyboardRemove
+from telegram.constants import PARSEMODE_MARKDOWN_V2 as MARKDOWN
 from telegram.ext import (
     CommandHandler,
     MessageHandler,
@@ -61,6 +62,7 @@ class PlotBot:
         self._dp.add_handler(CommandHandler('start', self._help))
         self._dp.add_handler(CommandHandler('help', self._help))
         self._dp.add_handler(CommandHandler('cancel', self._cancel))
+        self._dp.add_handler(CommandHandler('locations', self._overview_locations))
 
         subscription_handler = ConversationHandler(
             entry_points=[
@@ -126,23 +128,32 @@ class PlotBot:
         self.updater.stop()
         self._dp.stop()
 
+    def _overview_locations(self, update: Update, context: CallbackContext):
+        text = ["_Available locations_"]
+        for location in self._station_regions:
+            text.append(f'')
+            text.append(f'*{location}*')
+            text.extend([f'- {n}' for n in self._get_station_names_for_region(location)])
+        update.message.reply_markdown("\n".join(text))
+
     def _help(self, update: Update, context: CallbackContext):
 
         greetings = "Hi! I am OpenEns. I supply you with ECWMF meteograms for places in Switzerland. \
-                    \nTwice a day a new set of meteograms is available, usually at 8:00 for the 00 UTC run and at 20:00 for the 12 UTC run. \
+                    \nTwice a day a new set of meteograms is available, usually at *8:00* for the *00 UTC* run and at *20:00* for the *12 UTC* run. \
                     \nYou can subscribe for a location or request a forecast only once. \
-                    \n\nCommands \
-                    \nTo subscribe type /subscribe. \
-                    \nTo request a forecast type /plots. \
-                    \nTo unsubscribe type /unsubscribe. \
-                    \nTo cancel any operation type /cancel. \
-                    \nTo get this message type /help. \
+                    \n\n*Commands* \
+                    \n- To get a list of available locations type /locations. \
+                    \n- To subscribe type /subscribe. \
+                    \n- To request a forecast type /plots. \
+                    \n- To unsubscribe type /unsubscribe. \
+                    \n- To get this message type /help. \
+                    \n- To cancel any operation type /cancel. \
                     \n\nAll available commands are also shown in the menu at the bottom of the chat. \
                     \n\nIf you have any questions, feedback, or if the bot missed a place you want forecasts for, please open an issue on GitHub: \
                     \nhttps://github.com/jonasjucker/ensplotbot \
-                    \n\nHave fun!"
+                    \n\n*Have fun!*"
 
-        update.message.reply_text(greetings)
+        update.message.reply_markdown(greetings)
 
     def _get_subscriptions_of_user(self, user_id, context) -> list[str]:
         return [
