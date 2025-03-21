@@ -20,7 +20,7 @@ TIMEOUT = 60
 
 class PlotBot:
 
-    def __init__(self, token, station_config, backup, admin_id):
+    def __init__(self, token, station_config, backup, admin_id=None):
 
         # Create the Updater and pass it your bot's token.
         persistence = PicklePersistence(
@@ -281,7 +281,8 @@ class PlotBot:
     def _log_stats_and_send_to_admin(self):
         stats = self._collect_bot_data()
         logging.info(stats)
-        self._dp.bot.send_message(chat_id=self._admin_id, text=stats)
+        if self._admin_id:
+            self._dp.bot.send_message(chat_id=self._admin_id, text=stats)
 
     def _subscribe_for_station(self, update: Update,
                                context: CallbackContext) -> int:

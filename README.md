@@ -20,13 +20,9 @@ To run the bot, follow these steps:
     ```sh
     pip install -r requirements.txt
     ```
-3. Create two files with your bot token and admin ID:
-  - BOT_TOKEN: your bot token from telegram botfather
-  - ADMIN_ID: your telegram id
-
-4. Run the bot using the provided `launch_bot.sh` script:
+3. Run the bot:
     ```sh
-    python main.py --bot_token $(cat BOT_TOKEN) --bot_backup $(pwd)/backup --log_level 10 --admin_id $(cat ADMIN_ID)
+    python main.py --bot_token YOUR_SECRET_BOT_TOKEN --bot_backup $(pwd)/backup --log_level 10
     ```
 
 ## Adding a new location
