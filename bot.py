@@ -53,8 +53,8 @@ class PlotBot:
                                              ")$")
         # filter for all commands of bot
         self._filter_all_commands = Filters.regex(
-            "^(/locations|/subscribe|/unsubscribe|/plots|/help|/cancel|/start)$")
-        
+            "^(/locations|/subscribe|/unsubscribe|/plots|/help|/cancel|/start)$"
+        )
 
         # filter for meaningful messages that are explicitly handled by the bot
         # inverse of all filters above
@@ -75,9 +75,10 @@ class PlotBot:
         self._dp.add_handler(CommandHandler('cancel', self._cancel))
         self._dp.add_handler(
             CommandHandler('locations', self._overview_locations))
-        
+
         # add help handler for all other messages
-        self._dp.add_handler(MessageHandler(self._filter_meaningful_messages, self._help))
+        self._dp.add_handler(
+            MessageHandler(self._filter_meaningful_messages, self._help))
 
         subscription_handler = ConversationHandler(
             entry_points=[
