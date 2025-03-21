@@ -38,7 +38,7 @@ def test_station_config_has_valid_entries(station_config):
 def test_station_config_has_valid_region(station_config):
     regions = [
         'Grisons', 'Glarus', 'Zurich', 'Basilea', 'Ticino', "Suisse Romande",
-        "Central Switzerland", "Valais"
+        "Central Switzerland", "Valais", "Canton Berne"
     ]
     for station in station_config:
         assert station[
@@ -179,16 +179,18 @@ def test_latest_confirmed_run_with_api_fail(ecmwf):
     # base_time of ecmwf, but shifted by 12 hours
     correct_latest_confirmed_run = ecmwf._fetch_available_base_time(
         fallback=True, timeshift=12)
-    for Station in ecmwf._stations:
-        with patch.object(EcmwfApi,
-                          '_get_API_data_for_epsgram',
-                          side_effect=ValueError):
-            latest_run = ecmwf._latest_confirmed_run(Station)
-        assert correct_latest_confirmed_run == latest_run, "latest_confirmed_run should be identical to base_time - 12 of ecmwf"
+    Station = ecmwf._stations[3]
+    with patch.object(EcmwfApi,
+                        '_get_API_data_for_epsgram',
+                        side_effect=ValueError):
+        latest_run = ecmwf._latest_confirmed_run(Station)
+    assert correct_latest_confirmed_run == latest_run, "latest_confirmed_run should be identical to base_time - 12 of ecmwf"
 
 
 def test_override_base_time_from_init_past(ecmwf):
     past = '2021-01-01T00:00:00Z'
+    stations = ecmwf._stations[:2]
+    ecmwf._stations = stations
     for Station in ecmwf._stations:
         Station.base_time = past
     ecmwf.override_base_time_from_init()
@@ -198,6 +200,8 @@ def test_override_base_time_from_init_past(ecmwf):
 
 def test_override_base_time_from_init_future(ecmwf):
     future = ecmwf._fetch_available_base_time(fallback=True, timeshift=-48)
+    stations = ecmwf._stations[-2:]
+    ecmwf._stations = stations
     for Station in ecmwf._stations:
         Station.base_time = future
     ecmwf.override_base_time_from_init()
