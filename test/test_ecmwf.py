@@ -246,11 +246,11 @@ def test_download_latest_plots_for(ecmwf, station):
             Station.base_time = past
             plots = ecmwf.download_latest_plots()
 
-            assert ecmwf._plots_for_broadcast == {} , "Plots for broadcast should be empty"
+            assert ecmwf._plots_for_broadcast == {}, "Plots for broadcast should be empty"
 
             assert plots == expected_plots, "Plots should match expected_plots"
 
-            assert past != Station.base_time , "base_time of station should be updated"
+            assert past != Station.base_time, "base_time of station should be updated"
 
 
 def test_download_latest_plots_for_same_basetime(ecmwf):
