@@ -181,8 +181,8 @@ def test_latest_confirmed_run_with_api_fail(ecmwf):
         fallback=True, timeshift=12)
     Station = ecmwf._stations[3]
     with patch.object(EcmwfApi,
-                        '_get_API_data_for_epsgram',
-                        side_effect=ValueError):
+                      '_get_API_data_for_epsgram',
+                      side_effect=ValueError):
         latest_run = ecmwf._latest_confirmed_run(Station)
     assert correct_latest_confirmed_run == latest_run, "latest_confirmed_run should be identical to base_time - 12 of ecmwf"
 
