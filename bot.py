@@ -62,7 +62,8 @@ class PlotBot:
         self._dp.add_handler(CommandHandler('start', self._help))
         self._dp.add_handler(CommandHandler('help', self._help))
         self._dp.add_handler(CommandHandler('cancel', self._cancel))
-        self._dp.add_handler(CommandHandler('locations', self._overview_locations))
+        self._dp.add_handler(
+            CommandHandler('locations', self._overview_locations))
 
         subscription_handler = ConversationHandler(
             entry_points=[
@@ -133,7 +134,9 @@ class PlotBot:
         for location in self._station_regions:
             text.append(f'')
             text.append(f'*{location}*')
-            text.extend([f'- {n}' for n in self._get_station_names_for_region(location)])
+            text.extend([
+                f'- {n}' for n in self._get_station_names_for_region(location)
+            ])
         update.message.reply_markdown("\n".join(text))
 
     def _help(self, update: Update, context: CallbackContext):
