@@ -13,11 +13,7 @@ def stop(bot):
     sys.exit(1)
 
 
-<<<<<<< HEAD
-def start_bot(bot, token, station_config, backup, admin_id, restart=False):
-=======
 def start_bot(bot, token, station_config, backup,admin_id, restart=False):
->>>>>>> eb10b87609dc0e830ceb6c049c755f73097bd762
     if restart:
         bot.stop()
     bot = PlotBot(token, station_config, backup, admin_id)
@@ -64,16 +60,7 @@ def main():
     with open('stations.yaml', 'r') as file:
         station_config = yaml.safe_load(file)
 
-<<<<<<< HEAD
-    bot = start_bot(None,
-                    args.bot_token,
-                    station_config,
-                    args.bot_backup,
-                    args.admin_id,
-                    restart=False)
-=======
     bot = start_bot(None,args.bot_token, station_config, args.bot_backup, args.admin_id, restart=False)
->>>>>>> eb10b87609dc0e830ceb6c049c755f73097bd762
 
     ecmwf = EcmwfApi(station_config)
     ecmwf.override_base_time_from_init()
@@ -97,17 +84,8 @@ def main():
             stop(bot)
 
         if bot.restart_required():
-<<<<<<< HEAD
-            bot = start_bot(bot,
-                            args.bot_token,
-                            station_config,
-                            args.bot_backup,
-                            args.admin_id,
-                            restart=True)
-=======
             bot = start_bot(bot, args.bot_token, station_config,
                               args.bot_backup, args.admin_id, restart=True)
->>>>>>> eb10b87609dc0e830ceb6c049c755f73097bd762
             logging.info('Bot restarted')
 
         snooze = 5
