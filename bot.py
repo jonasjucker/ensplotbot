@@ -50,6 +50,11 @@ class PlotBot:
                                              ")$")
         self.updater = Updater(token, persistence=persistence)
         self._dp = self.updater.dispatcher
+        # initialize bot_data with empty set for each station if not present
+        [
+            self._dp.bot_data.setdefault(station, set())
+            for station in self._station_names
+        ]
         self._stop = False
         self._admin_id = admin_id
 
@@ -269,7 +274,6 @@ class PlotBot:
     def _register_subscription(self, user, station, context):
 
         # add user to subscription list for given station
-        context.bot_data.setdefault(station, set())
         context.bot_data[station].add(user.id)
 
         self._subscriptions[station].add(user.id)
@@ -354,9 +358,8 @@ class PlotBot:
     def _collect_bot_data(self):
         stats = []
         stats.append('')
-        stats.append('Bot stats:')
         for station, users in self._dp.bot_data.items():
-            stats.append(f'Station {station} has {len(users)} subscribers')
+            stats.append(f'{station}: {len(users)}')
         unique_users = set()
         for users in self._dp.bot_data.values():
             unique_users.update(users)
