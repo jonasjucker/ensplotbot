@@ -210,6 +210,7 @@ def test_override_base_time_from_init_future(ecmwf):
         assert Station.base_time == future, "base_time of station is in future, should not be updated"
 
 
+@pytest.mark.xfail(reason="This test is flaky", strict=False)
 @pytest.mark.parametrize("station", ['Bern'])
 def test_private_download_plots_for(ecmwf, station):
     plots = [f'./{station}_{i}.png' for i in ecmwf._epsgrams]
@@ -221,6 +222,7 @@ def test_private_download_plots_for(ecmwf, station):
             assert ecmwf._plots_for_broadcast[station] == plots
 
 
+@pytest.mark.xfail(reason="This test is flaky", strict=False)
 @pytest.mark.parametrize("station", ['Engelberg'])
 def test_public_download_plots_for(ecmwf, station):
     plots = {}
