@@ -36,7 +36,7 @@ def test_station_config_has_valid_entries(station_config):
 
 
 def test_station_config_has_valid_region(station_config):
-    regions = ['Grisons', 'Glarus', 'Zurich', 'Basilea', 'Ticino']
+    regions = ['Grisons', 'Glarus', 'Zurich', 'Basilea', 'Ticino', "Suisse Romande", "Central Switzerland", "Valais"]
     for station in station_config:
         assert station[
             'region'] in regions, f"{station['region']} is not a valid region"

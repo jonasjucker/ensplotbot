@@ -82,3 +82,66 @@
   region: Glarus
   lat: 46.9416
   lon: 8.99643
+
+# Suisse Romande
+- name: Lausanne
+  region: Suisse Romande
+  lat: 46.516
+  lon: 6.63282
+
+- name: Fribourg
+  region: Suisse Romande
+  lat: 46.8024 
+  lon: 7.15128
+
+- name: Montreux
+  region: Suisse Romande
+  lat: 46.433
+  lon: 6.91143
+
+# Central Switzerland
+- name: Luzern
+  region: Central Switzerland
+  lat: 47.0505
+  lon: 8.30635
+
+- name: Stoos
+  region: Central Switzerland
+  lat: 46.9767
+  lon: 8.66323
+
+- name: Andermatt
+  region: Central Switzerland
+  lat: 46.6357
+  lon: 8.59388
+
+- name: Engelberg
+  region: Central Switzerland
+  lat: 46.8211
+  lon: 8.40133
+
+# Valais
+- name: Sitten
+  region: Valais
+  lat: 46.2274
+  lon: 7.35559
+
+- name: Zermatt
+  region: Valais
+  lat: 46.02
+  lon: 7.74863
+
+- name: Saas Fee
+  region: Valais
+  lat: 46.1081
+  lon: 7.92741
+
+- name: Crans-Montana
+  region: Valais
+  lat: 46.3132
+  lon: 7.47914
+
+- name: Bettmeralp
+  region: Valais
+  lat: 46.3902
+  lon: 8.06254
