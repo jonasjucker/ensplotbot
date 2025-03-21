@@ -23,10 +23,18 @@ To add a new location to the bot, follow these steps:
       lon: 6.14569
     ```
 3. Obtain the `api_name`, `lat`, and `lon` values from the [Opencharts website](https://charts.ecmwf.int/products/opencharts_meteogram?base_time=202503211200&epsgram=classical_10d&lat=51.4333&lon=-1.0&station_name=Reading):
-    - Find your location on the map. <img src="pics/select_location.png" alt="Select Location" width="300"> 
-    - Click on "Export plot" on the right side. <img src="pics/export_plot.png alt="Export Plot" width="300">
-    - Choose `< > script` <img src="pics/choose_link.png alt="Export for script" width="300">
-    - This will generate a link where the correct coordinates (`lat`, `lon`) and the `api_name` are visible. <img src="pics/url.png alt="Generate link" width="300">
+    - Find your location on the map.
+
+      <img src="pics/select_location.png" alt="Select Location" width="150"> 
+    - Click on "Export plot" on the right side.
+
+      <img src="pics/export_plot.png" alt="Export Plot" width="100">
+    - Choose `< > script`
+
+      <img src="pics/choose_link.png" alt="Export for script" width="100">
+    - This will generate a link where the correct coordinates (`lat`, `lon`) and the `api_name` are visible.
+    
+      <img src="pics/url.png" alt="Generate link" width="400">
     - Copy these three values and add them to the `stations.yaml` file.
 
 ## Contributing
