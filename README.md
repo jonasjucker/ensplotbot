@@ -11,6 +11,24 @@ I am a Telegram bot that provides ECMWF meteograms for various locations in Swit
 - View available locations
 - Unsubscribe from daily forecasts
 
+## Running the Bot
+
+To run the bot, follow these steps:
+
+1. Ensure you have Python installed on your system.
+2. Install the required dependencies:
+    ```sh
+    pip install -r requirements.txt
+    ```
+3. Create two files with your bot token and admin ID:
+  - BOT_TOKEN: your bot token from telegram botfather
+  - ADMIN_ID: your telegram id
+
+4. Run the bot using the provided `launch_bot.sh` script:
+    ```sh
+    python main.py --bot_token $(cat BOT_TOKEN) --bot_backup $(pwd)/backup --log_level 10 --admin_id $(cat ADMIN_ID)
+    ```
+
 ## Adding a new location
 
 To add a new location to the bot, follow these steps:
@@ -38,6 +56,11 @@ To add a new location to the bot, follow these steps:
     
       <img src="pics/url.png" alt="Generate link" width="400">
     - Copy these three values and add them to the `stations.yaml` file.
+
+## Testing
+```sh
+pytest -v test/*
+```
 
 ## Contributing
 
