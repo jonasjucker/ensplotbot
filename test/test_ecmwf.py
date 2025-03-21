@@ -209,6 +209,7 @@ def test_override_base_time_from_init_future(ecmwf):
         # we rely here the API never returns a base_time in the future
         assert Station.base_time == future, "base_time of station is in future, should not be updated"
 
+
 @pytest.mark.parametrize("station", ['Adelboden', 'Bern'])
 def test_private_download_plots_for(ecmwf, station):
     plots = [f'./{station}_{i}.png' for i in ecmwf._epsgrams]
@@ -218,6 +219,7 @@ def test_private_download_plots_for(ecmwf, station):
             Station.base_time = past
             ecmwf._download_plots(Station)
             assert ecmwf._plots_for_broadcast[station] == plots
+
 
 @pytest.mark.parametrize("station", ['Engelberg', 'Luzern'])
 def test_public_download_plots_for(ecmwf, station):
@@ -230,6 +232,7 @@ def test_public_download_plots_for(ecmwf, station):
             plots = ecmwf.download_plots([station])
             assert ecmwf._plots_for_broadcast == {}
             assert plots == plots
+
 
 @pytest.mark.parametrize("station", ['Thun', 'Stoos'])
 def test_download_latest_plots_for(ecmwf, station):
@@ -246,13 +249,13 @@ def test_download_latest_plots_for(ecmwf, station):
             # check that the base_time of the station was updated
             assert past != Station.base_time
 
+
 def test_download_latest_plots_for_same_basetime(ecmwf):
     plots = {}
     ecmwf._stations = ecmwf._stations[:1]
     for Station in ecmwf._stations:
-            Station.base_time = ecmwf._base_time
-            plots = ecmwf.download_latest_plots()
-            assert ecmwf._plots_for_broadcast == {}
-            # check that no plots were downloaded
-            assert plots == {}
-
+        Station.base_time = ecmwf._base_time
+        plots = ecmwf.download_latest_plots()
+        assert ecmwf._plots_for_broadcast == {}
+        # check that no plots were downloaded
+        assert plots == {}
