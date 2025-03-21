@@ -128,8 +128,19 @@ class PlotBot:
 
     def _help(self, update: Update, context: CallbackContext):
 
-        greetings = "Hi! I am OpenEns. I supply you with the latest ECWMF meteograms. \
-                    The forecast is usually available at 8:00 for the 00 UTC run and at 20:00 for the 12 UTC run."
+        greetings = "Hi! I am OpenEns. I supply you with ECWMF meteograms for places in Switzerland. \
+                    \nTwice a day a new set of meteograms is available, usually at 8:00 for the 00 UTC run and at 20:00 for the 12 UTC run. \
+                    \nYou can subscribe for a location or request a forecast only once. \
+                    \n\nCommands \
+                    \nTo subscribe type /subscribe. \
+                    \nTo request a forecast type /plots. \
+                    \nTo unsubscribe type /unsubscribe. \
+                    \nTo cancel any operation type /cancel. \
+                    \nTo get this message type /help. \
+                    \n\nAll available commands are also shown in the menu at the bottom of the chat. \
+                    \n\nIf you have any questions, feedback, or if the bot missed a place you want forecasts for, please open an issue on GitHub: \
+                    \nhttps://github.com/jonasjucker/ensplotbot \
+                    \n\nHave fun!"
 
         update.message.reply_text(greetings)
 
