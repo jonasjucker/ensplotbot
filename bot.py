@@ -43,12 +43,23 @@ class PlotBot:
             station: set()
             for station in self._station_names
         }
+        # filter for stations
         self._filter_stations = Filters.regex("^(" +
                                               "|".join(self._station_names) +
                                               ")$")
+        # filter for regions
         self._filter_regions = Filters.regex("^(" +
                                              "|".join(self._station_regions) +
                                              ")$")
+        # filter for all commands of bot
+        self._filter_all_commands = Filters.regex(
+            "^(/locations|/subscribe|/unsubscribe|/plots|/help|/cancel|/start)$")
+        
+
+        # filter for meaningful messages that are explicitly handled by the bot
+        # inverse of all filters above
+        self._filter_meaningful_messages = ~self._filter_all_commands & ~self._filter_regions & ~self._filter_stations
+
         self.updater = Updater(token, persistence=persistence)
         self._dp = self.updater.dispatcher
         # initialize bot_data with empty set for each station if not present
@@ -64,6 +75,9 @@ class PlotBot:
         self._dp.add_handler(CommandHandler('cancel', self._cancel))
         self._dp.add_handler(
             CommandHandler('locations', self._overview_locations))
+        
+        # add help handler for all other messages
+        self._dp.add_handler(MessageHandler(self._filter_meaningful_messages, self._help))
 
         subscription_handler = ConversationHandler(
             entry_points=[
