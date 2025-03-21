@@ -246,6 +246,7 @@ def test_download_latest_plots_for(ecmwf, station):
             plots = ecmwf.download_latest_plots()
             assert ecmwf._plots_for_broadcast == {}
             assert expected_plots == plots
+
             # check that the base_time of the station was updated
             assert past != Station.base_time
 
