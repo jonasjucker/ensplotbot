@@ -42,12 +42,23 @@ class PlotBot:
             station: set()
             for station in self._station_names
         }
+        # filter for stations
         self._filter_stations = Filters.regex("^(" +
                                               "|".join(self._station_names) +
                                               ")$")
+        # filter for regions
         self._filter_regions = Filters.regex("^(" +
                                              "|".join(self._station_regions) +
                                              ")$")
+        # filter for all commands of bot
+        self._filter_all_commands = Filters.regex(
+            "^(/locations|/subscribe|/unsubscribe|/plots|/help|/cancel|/start)$"
+        )
+
+        # filter for meaningful messages that are explicitly handled by the bot
+        # inverse of all filters above
+        self._filter_meaningful_messages = ~self._filter_all_commands & ~self._filter_regions & ~self._filter_stations
+
         self.updater = Updater(token, persistence=persistence)
         self._dp = self.updater.dispatcher
         # initialize bot_data with empty set for each station if not present
@@ -61,6 +72,12 @@ class PlotBot:
         self._dp.add_handler(CommandHandler('start', self._help))
         self._dp.add_handler(CommandHandler('help', self._help))
         self._dp.add_handler(CommandHandler('cancel', self._cancel))
+        self._dp.add_handler(
+            CommandHandler('locations', self._overview_locations))
+
+        # add help handler for all other messages
+        self._dp.add_handler(
+            MessageHandler(self._filter_meaningful_messages, self._help))
 
         subscription_handler = ConversationHandler(
             entry_points=[
@@ -126,12 +143,34 @@ class PlotBot:
         self.updater.stop()
         self._dp.stop()
 
+    def _overview_locations(self, update: Update, context: CallbackContext):
+        text = ["_Available locations_"]
+        for location in self._station_regions:
+            text.append(f'')
+            text.append(f'*{location}*')
+            text.extend([
+                f'- {n}' for n in self._get_station_names_for_region(location)
+            ])
+        update.message.reply_markdown("\n".join(text))
+
     def _help(self, update: Update, context: CallbackContext):
 
-        greetings = "Hi! I am OpenEns. I supply you with the latest ECWMF meteograms. \
-                    The forecast is usually available at 8:00 for the 00 UTC run and at 20:00 for the 12 UTC run."
+        greetings = "Hi! I am OpenEns. I supply you with ECWMF meteograms for places in Switzerland. \
+                    \nTwice a day a new set of meteograms is available, usually at *8:00* for the *00 UTC* run and at *20:00* for the *12 UTC* run. \
+                    \nYou can subscribe for a location or request a forecast only once. \
+                    \n\n*Commands* \
+                    \n- To get a list of available locations type /locations. \
+                    \n- To subscribe type /subscribe. \
+                    \n- To request a forecast type /plots. \
+                    \n- To unsubscribe type /unsubscribe. \
+                    \n- To get this message type /help. \
+                    \n- To cancel any operation type /cancel. \
+                    \n\nAll available commands are also shown in the menu at the bottom of the chat. \
+                    \n\nIf you have any questions, feedback, or if the bot missed a place you want forecasts for, please open an issue on GitHub: \
+                    \nhttps://github.com/jonasjucker/ensplotbot \
+                    \n\n*Have fun!*"
 
-        update.message.reply_text(greetings)
+        update.message.reply_markdown(greetings)
 
     def _get_subscriptions_of_user(self, user_id, context) -> list[str]:
         return [
