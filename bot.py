@@ -159,13 +159,19 @@ class PlotBot:
 
     def _choose_all_region(self, update: Update,
                            context: CallbackContext) -> int:
+
         entry_point = update.message.text
-        logging.error(f'entry_point: {entry_point}')
 
         self._send_region_keyboard(update,
                                    [name for name in self._station_regions])
 
-        return STATION_SELECT_ONE_TIME if entry_point == '/plots' else STATION_SELECT_SUBSCRIBE
+        # check that entry point is valid
+        if entry_point == '/subscribe':
+            return STATION_SELECT_SUBSCRIBE
+        elif entry_point == '/plots':
+            return STATION_SELECT_ONE_TIME
+        else:
+            raise ValueError(f'Invalid entry point: {entry_point}')
 
     def _get_station_names_for_region(self, region) -> list[str]:
         return [
