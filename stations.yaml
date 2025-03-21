@@ -145,3 +145,29 @@
   region: Valais
   lat: 46.3902
   lon: 8.06254
+
+# Canton Berne
+- name: Bern
+  region: Canton Berne
+  lat: 46.9481
+  lon: 7.44744
+
+- name: Thun
+  region: Canton Berne
+  lat: 46.7512
+  lon: 7.62166
+
+- name: Interlaken
+  region: Canton Berne
+  lat: 46.6839
+  lon: 7.86638
+
+- name: Grindelwald
+  region: Canton Berne
+  lat: 46.624
+  lon: 8.03601
+
+- name: Adelboden
+  region: Canton Berne
+  lat: 46.4914
+  lon: 7.56031
