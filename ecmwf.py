@@ -20,10 +20,11 @@ class EcmwfApi():
 
         class Station():
 
-            def __init__(self, name, lat, lon):
+            def __init__(self, name, lat, lon, region):
                 self.name = name
                 self.lat = lat
                 self.lon = lon
+                self.region = region
                 self.base_time = None
 
         self._API_URL = "https://charts.ecmwf.int/opencharts-api/v1/"

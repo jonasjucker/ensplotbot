@@ -1,35 +1,44 @@
 - name: Tschiertschen
+  region: Grisons
   lat: 46.8177
   lon: 9.60638
 
 - name: Basel
+  region: Basilea
   lat: 47.5584
   lon: 7.57327
 
 - name: Locarno
+  region: Ticino
   lat: 46.1709
   lon: 8.79953
   
 - name: Zürich
+  region: Zurich
   lat: 47.3667
   lon: 8.55
   
 - name: Winterthur
+  region: Zurich
   lat: 47.5056
   lon: 8.72413
   
 - name: Embrach
+  region: Zurich
   lat: 47.5056
   lon: 8.59406
 
 - name: Disentis
+  region: Grisons
   lat: 46.7034
   lon: 8.8509
 
 - name: Davos
+  region: Grisons
   lat: 46.8043
   lon: 9.83723
 
 - name: Elm
+  region: Glarus
   lat: 46.919
   lon: 9.17242
