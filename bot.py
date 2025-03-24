@@ -130,7 +130,6 @@ class PlotBot:
 
         logging.info(self._collect_bot_data(short=True))
 
-
     def connect(self):
         self.updater.start_polling()
 
@@ -402,7 +401,7 @@ class PlotBot:
             for station in self._station_names
         }
 
-    def _collect_bot_data(self,short=False):
+    def _collect_bot_data(self, short=False):
         stats = []
         stats.append('')
         for station, users in self._dp.bot_data.items():

@@ -8,11 +8,13 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from bot import PlotBot
 
+
 @pytest.fixture
 def bot(station_config):
     from bot import PlotBot
     token = '9999999999:BBBBBBBRBBBBBBBBBBBBBBBBBBBBBBBBBBB'
     return PlotBot(token, station_config, 'test/backup')
+
 
 @pytest.fixture
 def station_config():
@@ -42,18 +44,21 @@ def test_register_subscription(bot):
     assert id1 in bot_data['Bern']
     assert id1 in bot._subscriptions['Bern']
 
+
 def test_has_new_subscribers_waiting(bot):
     assert not bot.has_new_subscribers_waiting()
     bot._register_subscription(123, 'Bern', bot._dp.bot_data)
     assert bot.has_new_subscribers_waiting()
 
+
 def test_stations_of_new_subscribers(bot):
     bot._register_subscription(123, 'Bern', bot._dp.bot_data)
     assert bot.stations_of_new_subscribers() == ['Bern']
     bot._register_subscription(324, 'Basel', bot._dp.bot_data)
-    assert bot.stations_of_new_subscribers() == ['Basel','Bern']
+    assert bot.stations_of_new_subscribers() == ['Basel', 'Bern']
     bot._register_subscription(123, 'Zürich', bot._dp.bot_data)
-    assert bot.stations_of_new_subscribers() == ['Zürich','Basel','Bern']
+    assert bot.stations_of_new_subscribers() == ['Zürich', 'Basel', 'Bern']
+
 
 def test_collect_bot_data_short(bot):
     bot._register_subscription(123, 'Bern', bot._dp.bot_data)
@@ -61,14 +66,18 @@ def test_collect_bot_data_short(bot):
     bot._register_subscription(124, 'Bern', bot._dp.bot_data)
     assert bot._collect_bot_data(short=True) == '\nTotal subscribers: 2'
 
+
 def test_collect_bot_data(bot):
     bot._register_subscription(123, 'Bern', bot._dp.bot_data)
-    assert bot._collect_bot_data(short=False) == '\nZürich: 0\nBasel: 0\nBern: 1\nTotal subscribers: 1'
+    assert bot._collect_bot_data(
+        short=False) == '\nZürich: 0\nBasel: 0\nBern: 1\nTotal subscribers: 1'
     bot._register_subscription(124, 'Bern', bot._dp.bot_data)
-    assert bot._collect_bot_data(short=False) == '\nZürich: 0\nBasel: 0\nBern: 2\nTotal subscribers: 2'
+    assert bot._collect_bot_data(
+        short=False) == '\nZürich: 0\nBasel: 0\nBern: 2\nTotal subscribers: 2'
     bot._register_subscription(129, 'Zürich', bot._dp.bot_data)
-    assert bot._collect_bot_data(short=False) == '\nZürich: 1\nBasel: 0\nBern: 2\nTotal subscribers: 3'
-    
+    assert bot._collect_bot_data(
+        short=False) == '\nZürich: 1\nBasel: 0\nBern: 2\nTotal subscribers: 3'
+
 
 def test_revoke_subscription(bot):
     id1 = 123
