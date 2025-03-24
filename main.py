@@ -17,6 +17,7 @@ def start_bot(bot, token, station_config, backup, admin_id, restart=False):
     if restart:
         bot.stop()
     bot = PlotBot(token, station_config, backup, admin_id)
+    bot.connect()
     return bot
 
 
