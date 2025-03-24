@@ -171,12 +171,6 @@
   lat: 46.9918
   lon: 6.931
 
-- name: Biel-Bienne
-  api_name: Biel%2FBienne
-  region: Romandie
-  lat: 47.1371
-  lon: 7.24608
-
 # Central Switzerland
 - name: Zug
   region: Central Switzerland
@@ -254,3 +248,10 @@
   region: Canton Berne
   lat: 46.4914
   lon: 7.56031
+
+- name: Biel-Bienne
+  api_name: Biel%2FBienne
+  region: Canton Berne
+  lat: 47.1371
+  lon: 7.24608
+

@@ -4,3 +4,4 @@ requests
 PyYAML
 retry
 pytest
+pytest-cov
