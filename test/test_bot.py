@@ -91,5 +91,9 @@ def test_revoke_subscription(bot):
     assert id1 not in bot_data['Bern']
     assert id2 in bot_data['Bern']
 
+
 def test_available_locations(bot):
-    assert bot._available_locations() == ['_Available locations_', '', '*Basilea*', '- Basel', '', '*Canton Berne*', '- Bern', '', '*Zurich*', '- Zürich'] 
+    assert bot._available_locations() == [
+        '_Available locations_', '', '*Basilea*', '- Basel', '',
+        '*Canton Berne*', '- Bern', '', '*Zurich*', '- Zürich'
+    ]

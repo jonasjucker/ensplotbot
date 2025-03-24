@@ -145,7 +145,7 @@ class PlotBot:
 
     def _overview_locations(self, update: Update, context: CallbackContext):
         update.message.reply_markdown("\n".join(self._available_locations()))
-    
+
     def _available_locations(self):
         text = ["_Available locations_"]
         for location in sorted(self._station_regions):
