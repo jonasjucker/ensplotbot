@@ -144,14 +144,17 @@ class PlotBot:
         self._dp.stop()
 
     def _overview_locations(self, update: Update, context: CallbackContext):
+        update.message.reply_markdown("\n".join(self._available_locations()))
+    
+    def _available_locations(self):
         text = ["_Available locations_"]
-        for location in self._station_regions:
+        for location in sorted(self._station_regions):
             text.append(f'')
             text.append(f'*{location}*')
             text.extend([
                 f'- {n}' for n in self._get_station_names_for_region(location)
             ])
-        update.message.reply_markdown("\n".join(text))
+        return text
 
     def _help(self, update: Update, context: CallbackContext):
 
@@ -214,7 +217,7 @@ class PlotBot:
 
     def _get_station_names_for_region(self, region) -> list[str]:
         return [
-            name for name in self._station_names
+            name for name in sorted(self._station_names)
             if self._region_of_stations[name] == region
         ]
 
