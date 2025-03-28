@@ -418,9 +418,8 @@ class PlotBot:
         return stats_str
 
     def stations_with_subscribers(self):
-        return sorted([
-            station for station, users in self._dp.bot_data.items() if users
-        ])
+        return sorted(
+            [station for station, users in self._dp.bot_data.items() if users])
 
     def broadcast(self, plots):
         if plots:

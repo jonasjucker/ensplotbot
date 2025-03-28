@@ -259,6 +259,7 @@ def test_download_latest_plots_for(ecmwf, station):
 
             assert past != Station.base_time, "base_time of station should be updated"
 
+
 def test_download_latest_plots_for_no_subscriptions(ecmwf):
     station = 'Bern'
     expected_plots = {}

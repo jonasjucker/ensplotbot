@@ -82,7 +82,8 @@ def main():
             if bot.has_one_time_forecast_waiting():
                 bot.send_one_time_forecast(
                     ecmwf.download_plots(bot.stations_of_one_time_request()))
-            bot.broadcast(ecmwf.download_latest_plots(bot.stations_with_subscribers()))
+            bot.broadcast(
+                ecmwf.download_latest_plots(bot.stations_with_subscribers()))
             ecmwf.upgrade_basetime()
         except Exception as e:
             logging.error(f'An error occured: {e}')

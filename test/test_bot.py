@@ -98,6 +98,7 @@ def test_available_locations(bot):
         '*Canton Berne*', '- Bern', '', '*Zurich*', '- Zürich'
     ]
 
+
 def test_stations_with_subscribers(bot):
     bot._register_subscription(123, 'Bern', bot._dp.bot_data)
     bot._register_subscription(124, 'Bern', bot._dp.bot_data)
