@@ -97,3 +97,15 @@ def test_available_locations(bot):
         '_Available locations_', '', '*Basilea*', '- Basel', '',
         '*Canton Berne*', '- Bern', '', '*Zurich*', '- Zürich'
     ]
+
+def test_stations_with_subscribers(bot):
+    bot._register_subscription(123, 'Bern', bot._dp.bot_data)
+    bot._register_subscription(124, 'Bern', bot._dp.bot_data)
+    bot._register_subscription(125, 'Zürich', bot._dp.bot_data)
+    assert bot.stations_with_subscribers() == ['Bern', 'Zürich']
+    bot._revoke_subscription(123, 'Bern', bot._dp.bot_data)
+    assert bot.stations_with_subscribers() == ['Bern', 'Zürich']
+    bot._revoke_subscription(124, 'Bern', bot._dp.bot_data)
+    assert bot.stations_with_subscribers() == ['Zürich']
+    bot._revoke_subscription(125, 'Zürich', bot._dp.bot_data)
+    assert bot.stations_with_subscribers() == []

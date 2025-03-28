@@ -251,7 +251,23 @@ def test_download_latest_plots_for(ecmwf, station):
         if Station.name == station:
             ecmwf._stations = [Station]
             Station.base_time = past
-            plots = ecmwf.download_latest_plots()
+            plots = ecmwf.download_latest_plots([station])
+
+            assert ecmwf._plots_for_broadcast == {}, "Plots for broadcast should be empty"
+
+            assert plots == expected_plots, "Plots should match expected_plots"
+
+            assert past != Station.base_time, "base_time of station should be updated"
+
+def test_download_latest_plots_for_no_subscriptions(ecmwf):
+    station = 'Bern'
+    expected_plots = {}
+    past = ecmwf._fetch_available_base_time(fallback=True, timeshift=36)
+    for Station in ecmwf._stations:
+        if Station.name == station:
+            ecmwf._stations = [Station]
+            Station.base_time = past
+            plots = ecmwf.download_latest_plots(['Basel'])
 
             assert ecmwf._plots_for_broadcast == {}, "Plots for broadcast should be empty"
 
@@ -265,7 +281,7 @@ def test_download_latest_plots_for_same_basetime(ecmwf):
     ecmwf._stations = ecmwf._stations[:1]
     for Station in ecmwf._stations:
         Station.base_time = ecmwf._base_time
-        plots = ecmwf.download_latest_plots()
+        plots = ecmwf.download_latest_plots([Station.name])
         assert ecmwf._plots_for_broadcast == {}
         # check that no plots were downloaded
         assert plots == {}
