@@ -189,7 +189,7 @@ class EcmwfApi():
 
         return plots_for_broadcast
 
-    def download_latest_plots(self):
+    def download_latest_plots(self, requested_stations):
         for Station in self._stations:
             if self._new_forecast_available(Station):
 
@@ -203,7 +203,8 @@ class EcmwfApi():
                     # base_time needs update before fetch
                     # if not updated, bot sends endless plots to users
                     Station.base_time = confirmed_base_time
-                    self._download_plots(Station)
+                    if Station.name in requested_stations:
+                        self._download_plots(Station)
                 else:
                     logging.debug(
                         'base_time for {} {} and {} are the same'.format(
