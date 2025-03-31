@@ -213,7 +213,7 @@ def test_override_base_time_from_init_future(ecmwf):
     ecmwf.override_base_time_from_init()
     for Station in ecmwf._stations:
         # we rely here the API never returns a base_time in the future
-        assert Station.base_time == future, "base_time of station is in future, should not be updated"
+        assert Station.base_time != future, "base_time of station cannot be in future"
 
 
 @pytest.mark.xfail(reason="May fail due to bad API connection", strict=False)
