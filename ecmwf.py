@@ -205,16 +205,15 @@ class EcmwfApi():
                 # flag for broadcast
                 station.has_been_broadcasted = False
             else:
-                logging.debug(
-                    'base_time for {} {} and {} are the same'.format(
-                        station.name, station.base_time,
-                        confirmed_base_time))
+                logging.debug('base_time for {} {} and {} are the same'.format(
+                    station.name, station.base_time, confirmed_base_time))
 
     def download_latest_plots(self, requested_stations):
         plots_for_broadcast = {}
         for Station in self._stations:
             if Station.name in requested_stations and not Station.has_been_broadcasted:
-                plots_for_broadcast.update(self._download_plots(Station,is_broadcast=True))
+                plots_for_broadcast.update(
+                    self._download_plots(Station, is_broadcast=True))
 
         return plots_for_broadcast
 
@@ -232,9 +231,8 @@ class EcmwfApi():
             if is_broadcast:
                 Station.has_been_broadcasted = True
         except ValueError as e:
-            logging.warning(
-                'Error while fetching plots for {}'.format(
-                    Station.name))
+            logging.warning('Error while fetching plots for {}'.format(
+                Station.name))
             plots.clear()
 
         return plots

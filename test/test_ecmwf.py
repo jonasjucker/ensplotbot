@@ -250,8 +250,11 @@ def test_download_latest_plots_for(ecmwf, station):
         if Station.name == station:
             ecmwf._stations = [Station]
             Station.base_time = past
-            assert ecmwf.download_latest_plots([station]) == expected_plots, "Plots should match expected_plots"
+            assert ecmwf.download_latest_plots([
+                station
+            ]) == expected_plots, "Plots should match expected_plots"
             assert Station.has_been_broadcasted == True, "broadcast flag should be true"
+
 
 def test_download_latest_plots_for_no_subscriptions(ecmwf):
     station = 'Bern'
@@ -264,7 +267,8 @@ def test_download_latest_plots_for_no_subscriptions(ecmwf):
             plots = ecmwf.download_latest_plots(['Basel'])
 
             assert plots == expected_plots, "Plots should match expected_plots"
-            assert Station.has_been_broadcasted == False , "Broadcast flag should be false"
+            assert Station.has_been_broadcasted == False, "Broadcast flag should be false"
+
 
 def test_download_latest_plots_broadcast_flag(ecmwf):
     ecmwf._stations = ecmwf._stations[:1]
@@ -272,6 +276,7 @@ def test_download_latest_plots_broadcast_flag(ecmwf):
         Station.has_been_broadcasted = True
         # check that no plots were downloaded
         assert ecmwf.download_latest_plots([Station.name]) == {}
+
 
 def test_upgrade_basetime_stations_past(ecmwf):
     ecmwf._stations = ecmwf._stations[:1]
@@ -282,6 +287,7 @@ def test_upgrade_basetime_stations_past(ecmwf):
         ecmwf.upgrade_basetime_stations()
         assert Station.base_time != past, "base time should have changed"
         assert Station.has_been_broadcasted == False, "broadcast flag should be set to false"
+
 
 def test_upgrade_basetime_stations_same_as_global(ecmwf):
     ecmwf._stations = ecmwf._stations[:1]
