@@ -28,6 +28,8 @@ class EcmwfApi():
                 self.region = region
                 self.base_time = None
                 self.has_been_broadcasted = False
+                self.plots_cached = False
+                self.all_plots = [f'./{name}_{i}.png' for i in ALL_EPSGRAM]
 
         self._API_URL = "https://charts.ecmwf.int/opencharts-api/v1/"
         self._stations = [
@@ -204,6 +206,8 @@ class EcmwfApi():
                 station.base_time = confirmed_base_time
                 # flag for broadcast
                 station.has_been_broadcasted = False
+                # flag for plot cache
+                station.plots_cached = False
             else:
                 logging.debug('base_time for {} {} and {} are the same'.format(
                     station.name, station.base_time, confirmed_base_time))
@@ -223,19 +227,32 @@ class EcmwfApi():
         logging.info('Fetch plots for {}'.format(Station.name))
         plots = {}
         eps = []
-        try:
-            for type in self._epsgrams:
-                image_api = self._request_epsgram_link_for_station(
-                    Station, type)
-                eps.append(
-                    self._save_image_of_station(image_api, Station, type))
-            plots[Station.name] = eps
-        except ValueError as e:
-            logging.warning('Error while fetching plots for {}'.format(
-                Station.name))
-            plots.clear()
+        if Station.plots_cached:
+            plots[Station.name]= Station.all_plots
+        else:
+            try:
+                for type in self._epsgrams:
+                    image_api = self._request_epsgram_link_for_station(
+                        Station, type)
+                    eps.append(
+                        self._save_image_of_station(image_api, Station, type))
+                plots[Station.name] = eps
+                Station.plots_cached = True
+            except ValueError as e:
+                logging.warning('Error while fetching plots for {}'.format(
+                    Station.name))
+                plots.clear()
 
         return plots
 
     def _new_forecast_available(self, Station):
         return Station.base_time != self._base_time
+
+    def cache_plots():
+        uncached = [S for S in self._stations if not S.plots_cached]
+        if uncached:
+            logging.info(f'Start caching for {Station.name}')
+            # only pick one element to not block the main thread
+            self._download_plots(uncached[0])
+        else:
+            logging.debug(f'All plots cached')

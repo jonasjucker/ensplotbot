@@ -226,7 +226,18 @@ def test_private_download_plots_for(ecmwf, station):
         if Station.name == station:
             Station.base_time = past
             assert ecmwf._download_plots(Station) == plots
+            assert Station.plots_cached == True, "plot caching should be active"
 
+@pytest.mark.parametrize("station", ['Bern'])
+def test_private_download_plots_cached_for(ecmwf, station):
+    plots = {}
+    plots[station] = [f'./{station}_{i}.png' for i in ecmwf._epsgrams]
+    past = ecmwf._fetch_available_base_time(fallback=True, timeshift=24)
+    for Station in ecmwf._stations:
+        if Station.name == station:
+            Station.base_time = past
+            Station.plots_cached = True
+            assert ecmwf._download_plots(Station) == plots
 
 @pytest.mark.parametrize("station", ['Bern'])
 def test_private_download_plots_api_failure(ecmwf, station):
@@ -252,6 +263,7 @@ def test_public_download_plots_for(ecmwf, station):
             Station.base_time = past
             plots = ecmwf.download_plots([station])
             assert plots == plots
+            assert Station.plots_cached == True, "plot caching should be active"
 
 
 @pytest.mark.xfail(reason="May fail due to bad API connection", strict=False)
