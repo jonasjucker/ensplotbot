@@ -228,6 +228,7 @@ def test_private_download_plots_for(ecmwf, station):
             assert ecmwf._download_plots(Station) == plots
             assert Station.plots_cached == True, "plot caching should be active"
 
+
 @pytest.mark.parametrize("station", ['Bern'])
 def test_private_download_plots_cached_for(ecmwf, station):
     plots = {}
@@ -238,6 +239,7 @@ def test_private_download_plots_cached_for(ecmwf, station):
             Station.base_time = past
             Station.plots_cached = True
             assert ecmwf._download_plots(Station) == plots
+
 
 @pytest.mark.parametrize("station", ['Bern'])
 def test_private_download_plots_api_failure(ecmwf, station):

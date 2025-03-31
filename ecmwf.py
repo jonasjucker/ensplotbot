@@ -228,7 +228,7 @@ class EcmwfApi():
         plots = {}
         eps = []
         if Station.plots_cached:
-            plots[Station.name]= Station.all_plots
+            plots[Station.name] = Station.all_plots
             logging.info(f'{Station.name}: Plots cached')
         else:
             try:
