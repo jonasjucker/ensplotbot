@@ -212,12 +212,14 @@ class EcmwfApi():
         plots_for_broadcast = {}
         for Station in self._stations:
             if Station.name in requested_stations and not Station.has_been_broadcasted:
-                plots_for_broadcast.update(
-                    self._download_plots(Station, is_broadcast=True))
+                plots = self._download_plots(Station)
+                if plots:
+                    Station.has_been_broadcasted = True
+                    plots_for_broadcast.update(plots)
 
         return plots_for_broadcast
 
-    def _download_plots(self, Station, is_broadcast=False):
+    def _download_plots(self, Station):
         logging.info('Fetch plots for {}'.format(Station.name))
         plots = {}
         eps = []
@@ -228,8 +230,6 @@ class EcmwfApi():
                 eps.append(
                     self._save_image_of_station(image_api, Station, type))
             plots[Station.name] = eps
-            if is_broadcast:
-                Station.has_been_broadcasted = True
         except ValueError as e:
             logging.warning('Error while fetching plots for {}'.format(
                 Station.name))
