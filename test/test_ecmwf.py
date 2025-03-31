@@ -173,9 +173,7 @@ def test_latest_confirmed_run_with_base_time_48_h_in_past_for(ecmwf, station):
     base_time_at_init = ecmwf._base_time
     ecmwf._base_time = ecmwf._fetch_available_base_time(fallback=True,
                                                         timeshift=48)
-    with patch.object(EcmwfApi,
-                      '_get_API_data_for_epsgram',
-                      return_value=0):
+    with patch.object(EcmwfApi, '_get_API_data_for_epsgram', return_value=0):
         for Station in ecmwf._stations:
             if Station.name == station:
                 latest_run = ecmwf._latest_confirmed_run(Station)
@@ -229,11 +227,14 @@ def test_private_download_plots_for(ecmwf, station):
             Station.base_time = past
             assert ecmwf._download_plots(Station) == plots
 
+
 @pytest.mark.parametrize("station", ['Bern'])
 def test_private_download_plots_api_failure(ecmwf, station):
     plots = {}
     past = ecmwf._fetch_available_base_time(fallback=True, timeshift=24)
-    with patch.object(ecmwf, '_request_epsgram_link_for_station', side_effect=ValueError):
+    with patch.object(ecmwf,
+                      '_request_epsgram_link_for_station',
+                      side_effect=ValueError):
         for Station in ecmwf._stations:
             if Station.name == station:
                 Station.base_time = past
@@ -294,7 +295,9 @@ def test_download_latest_plots_broadcast_flag(ecmwf):
 def test_upgrade_basetime_stations_past(ecmwf):
     ecmwf._stations = ecmwf._stations[:1]
     past = ecmwf._fetch_available_base_time(fallback=True, timeshift=36)
-    with patch.object(ecmwf, '_latest_confirmed_run', return_value=ecmwf._base_time):
+    with patch.object(ecmwf,
+                      '_latest_confirmed_run',
+                      return_value=ecmwf._base_time):
         for Station in ecmwf._stations:
             Station.base_time = past
             Station.has_been_broadcasted = True
