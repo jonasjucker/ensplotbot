@@ -121,7 +121,7 @@ def test_upgrade_base_time(ecmwf):
     ecmwf._base_time = ecmwf._fetch_available_base_time(fallback=True,
                                                         timeshift=12)
     base_time_shifted = ecmwf._base_time
-    ecmwf.upgrade_basetime()
+    ecmwf.upgrade_basetime_global()
     assert ecmwf._base_time != base_time_shifted, "base_time was not updated"
 
 
@@ -133,7 +133,7 @@ def test_upgrade_base_time_if_api_request_fails(ecmwf):
     with patch.object(EcmwfApi,
                       '_fetch_available_base_time',
                       side_effect=ValueError):
-        ecmwf.upgrade_basetime()
+        ecmwf.upgrade_basetime_global()
     assert ecmwf._base_time == base_time_shifted, "base_time was updated but should not have been"
 
 
@@ -215,19 +215,19 @@ def test_override_base_time_from_init_future(ecmwf):
         assert Station.base_time == future, "base_time of station is in future, should not be updated"
 
 
-@pytest.mark.xfail(reason="This test is flaky", strict=False)
+#@pytest.mark.xfail(reason="This test is flaky", strict=False)
 @pytest.mark.parametrize("station", ['Bern'])
 def test_private_download_plots_for(ecmwf, station):
-    plots = [f'./{station}_{i}.png' for i in ecmwf._epsgrams]
+    plots = {}
+    plots[station] = [f'./{station}_{i}.png' for i in ecmwf._epsgrams]
     past = ecmwf._fetch_available_base_time(fallback=True, timeshift=24)
     for Station in ecmwf._stations:
         if Station.name == station:
             Station.base_time = past
-            ecmwf._download_plots(Station)
-            assert ecmwf._plots_for_broadcast[station] == plots
+            assert ecmwf._download_plots(Station) == plots
 
 
-@pytest.mark.xfail(reason="This test is flaky", strict=False)
+#@pytest.mark.xfail(reason="This test is flaky", strict=False)
 @pytest.mark.parametrize("station", ['Engelberg'])
 def test_public_download_plots_for(ecmwf, station):
     plots = {}
@@ -237,11 +237,10 @@ def test_public_download_plots_for(ecmwf, station):
         if Station.name == station:
             Station.base_time = past
             plots = ecmwf.download_plots([station])
-            assert ecmwf._plots_for_broadcast == {}
             assert plots == plots
 
 
-@pytest.mark.xfail(reason="This test is flaky", strict=False)
+#@pytest.mark.xfail(reason="This test is flaky", strict=False)
 @pytest.mark.parametrize("station", ['Bettmeralp'])
 def test_download_latest_plots_for(ecmwf, station):
     expected_plots = {}
@@ -251,14 +250,8 @@ def test_download_latest_plots_for(ecmwf, station):
         if Station.name == station:
             ecmwf._stations = [Station]
             Station.base_time = past
-            plots = ecmwf.download_latest_plots([station])
-
-            assert ecmwf._plots_for_broadcast == {}, "Plots for broadcast should be empty"
-
-            assert plots == expected_plots, "Plots should match expected_plots"
-
-            assert past != Station.base_time, "base_time of station should be updated"
-
+            assert ecmwf.download_latest_plots([station]) == expected_plots, "Plots should match expected_plots"
+            assert Station.has_been_broadcasted == True, "broadcast flag should be true"
 
 def test_download_latest_plots_for_no_subscriptions(ecmwf):
     station = 'Bern'
@@ -270,19 +263,30 @@ def test_download_latest_plots_for_no_subscriptions(ecmwf):
             Station.base_time = past
             plots = ecmwf.download_latest_plots(['Basel'])
 
-            assert ecmwf._plots_for_broadcast == {}, "Plots for broadcast should be empty"
-
             assert plots == expected_plots, "Plots should match expected_plots"
+            assert Station.has_been_broadcasted == False , "Broadcast flag should be false"
 
-            assert past != Station.base_time, "base_time of station should be updated"
-
-
-def test_download_latest_plots_for_same_basetime(ecmwf):
-    plots = {}
+def test_download_latest_plots_broadcast_flag(ecmwf):
     ecmwf._stations = ecmwf._stations[:1]
     for Station in ecmwf._stations:
-        Station.base_time = ecmwf._base_time
-        plots = ecmwf.download_latest_plots([Station.name])
-        assert ecmwf._plots_for_broadcast == {}
+        Station.has_been_broadcasted = True
         # check that no plots were downloaded
-        assert plots == {}
+        assert ecmwf.download_latest_plots([Station.name]) == {}
+
+def test_upgrade_basetime_stations_past(ecmwf):
+    ecmwf._stations = ecmwf._stations[:1]
+    past = ecmwf._fetch_available_base_time(fallback=True, timeshift=36)
+    for Station in ecmwf._stations:
+        Station.base_time = past
+        Station.has_been_broadcasted = True
+        ecmwf.upgrade_basetime_stations()
+        assert Station.base_time != past, "base time should have changed"
+        assert Station.has_been_broadcasted == False, "broadcast flag should be set to false"
+
+def test_upgrade_basetime_stations_same_as_global(ecmwf):
+    ecmwf._stations = ecmwf._stations[:1]
+    for Station in ecmwf._stations:
+        Station.has_been_broadcasted = True
+        ecmwf.upgrade_basetime_stations()
+        assert Station.base_time == ecmwf._base_time, "base time should be same as global"
+        assert Station.has_been_broadcasted == True, "broadcast flag should remain untouched"

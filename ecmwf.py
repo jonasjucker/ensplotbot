@@ -27,6 +27,7 @@ class EcmwfApi():
                 self.lon = lon
                 self.region = region
                 self.base_time = None
+                self.has_been_broadcasted = False
 
         self._API_URL = "https://charts.ecmwf.int/opencharts-api/v1/"
         self._stations = [
@@ -36,8 +37,6 @@ class EcmwfApi():
         self._time_format = '%Y-%m-%dT%H:%M:%SZ'
         self._base_time = self._fetch_available_base_time(fallback=True,
                                                           timeshift=0)
-
-        self._plots_for_broadcast = {}
 
         # for performance reasons we set to base_time from API-schema, can be wrong
         # so we need to check if it is valid after the init of all stations
@@ -55,7 +54,7 @@ class EcmwfApi():
 
     def _first_guess_base_time(self):
         t_now = datetime.datetime.now()
-        t_now_rounded = pd.Timestamp.now().round(freq='12H').to_pydatetime()
+        t_now_rounded = pd.Timestamp.now().round(freq='12h').to_pydatetime()
 
         # rounding ends up in future
         if t_now <= t_now_rounded:
@@ -66,7 +65,7 @@ class EcmwfApi():
 
         return latest_run
 
-    def upgrade_basetime(self):
+    def upgrade_basetime_global(self):
         try:
             new_base_time = self._fetch_available_base_time(fallback=False)
             if new_base_time != self._base_time:
@@ -179,60 +178,66 @@ class EcmwfApi():
         return file
 
     def download_plots(self, requested_stations):
+        plots_for_broadcast = {}
         for Station in self._stations:
             if Station.name in requested_stations:
-                self._download_plots(Station)
-
-        # copy because we reset _plots_for_broadcast now
-        plots_for_broadcast = self._plots_for_broadcast.copy()
-        self._plots_for_broadcast = {}
+                plots_for_broadcast.update(self._download_plots(Station))
 
         return plots_for_broadcast
+
+    def upgrade_basetime_stations(self):
+        for Station in self._stations:
+            self._upgrade_basetime_for_station(Station)
+
+    def _upgrade_basetime_for_station(self, station):
+        if self._new_forecast_available(station):
+
+            # base_time for which all epsgrams are available
+            confirmed_base_time = self._latest_confirmed_run(station)
+
+            if confirmed_base_time == self._base_time:
+                logging.debug('base_time for {} updated to {}'.format(
+                    station.name, confirmed_base_time))
+
+                # base_time needs update before fetch
+                # if not updated, bot sends endless plots to users
+                station.base_time = confirmed_base_time
+                # flag for broadcast
+                station.has_been_broadcasted = False
+            else:
+                logging.debug(
+                    'base_time for {} {} and {} are the same'.format(
+                        station.name, station.base_time,
+                        confirmed_base_time))
 
     def download_latest_plots(self, requested_stations):
+        plots_for_broadcast = {}
         for Station in self._stations:
-            if self._new_forecast_available(Station):
-
-                # base_time for which all epsgrams are available
-                confirmed_base_time = self._latest_confirmed_run(Station)
-
-                if confirmed_base_time == self._base_time:
-                    logging.debug('base_time for {} updated to {}'.format(
-                        Station.name, confirmed_base_time))
-
-                    # base_time needs update before fetch
-                    # if not updated, bot sends endless plots to users
-                    Station.base_time = confirmed_base_time
-                    if Station.name in requested_stations:
-                        self._download_plots(Station)
-                else:
-                    logging.debug(
-                        'base_time for {} {} and {} are the same'.format(
-                            Station.name, Station.base_time,
-                            confirmed_base_time))
-
-        # copy because we reset _plots_for_broadcast now
-        plots_for_broadcast = self._plots_for_broadcast.copy()
-        self._plots_for_broadcast = {}
+            if Station.name in requested_stations and not Station.has_been_broadcasted:
+                plots_for_broadcast.update(self._download_plots(Station,is_broadcast=True))
 
         return plots_for_broadcast
 
-    def _download_plots(self, Station):
+    def _download_plots(self, Station, is_broadcast=False):
         logging.info('Fetch plots for {}'.format(Station.name))
-        plots = []
+        plots = {}
+        eps = []
         try:
             for type in self._epsgrams:
                 image_api = self._request_epsgram_link_for_station(
                     Station, type)
-                plots.append(
+                eps.append(
                     self._save_image_of_station(image_api, Station, type))
+            plots[Station.name] = eps
+            if is_broadcast:
+                Station.has_been_broadcasted = True
         except ValueError as e:
             logging.warning(
-                'Error while fetching plots for {}, skipping...'.format(
+                'Error while fetching plots for {}'.format(
                     Station.name))
-            plots = []
+            plots.clear()
 
-        self._plots_for_broadcast[Station.name] = plots
+        return plots
 
     def _new_forecast_available(self, Station):
         return Station.base_time != self._base_time

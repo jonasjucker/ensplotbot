@@ -84,7 +84,8 @@ def main():
                     ecmwf.download_plots(bot.stations_of_one_time_request()))
             bot.broadcast(
                 ecmwf.download_latest_plots(bot.stations_with_subscribers()))
-            ecmwf.upgrade_basetime()
+            ecmwf.upgrade_basetime_global()
+            ecmwf.upgrade_basetime_stations()
         except Exception as e:
             logging.error(f'An error occured: {e}')
             logging.error('Restart required')
