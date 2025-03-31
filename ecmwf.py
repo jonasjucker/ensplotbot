@@ -49,7 +49,7 @@ class EcmwfApi():
     def override_base_time_from_init(self):
         for Station in self._stations:
             latest_run = self._latest_confirmed_run(Station)
-            if latest_run != Station.base_time:
+            if latest_run > Station.base_time:
                 logging.info('Overriding {} base_time from {} to {}'.format(
                     Station.name, Station.base_time, latest_run))
                 Station.base_time = latest_run
@@ -128,7 +128,7 @@ class EcmwfApi():
     def _get_from_API_no_retry(self, link, raise_on_error=True):
         return self._get_with_request(link, raise_on_error)
 
-    @retry.retry(tries=20, delay=1)
+    @retry.retry(tries=10, delay=0.5)
     def _get_from_API_retry(self, link, raise_on_error=True):
         return self._get_with_request(link, raise_on_error)
 
@@ -240,7 +240,7 @@ class EcmwfApi():
                 plots[Station.name] = eps
                 Station.plots_cached = True
             except ValueError as e:
-                logging.warning('Error while fetching plots for {}'.format(
+                logging.warning('Could not fetch plots for {}'.format(
                     Station.name))
                 plots.clear()
 
@@ -249,11 +249,15 @@ class EcmwfApi():
     def _new_forecast_available(self, Station):
         return Station.base_time != self._base_time
 
-    def cache_plots():
-        uncached = [S for S in self._stations if not S.plots_cached]
+    def cache_plots(self):
+        uncached = set()
+        for S in self._stations:
+            if not S.plots_cached:
+                uncached.add(S)
         if uncached:
-            logging.info(f'Start caching for {Station.name}')
             # only pick one element to not block the main thread
-            self._download_plots(uncached[0])
+            s = uncached.pop()
+            logging.info(f'Start caching for {s.name}')
+            self._download_plots(s)
         else:
             logging.debug(f'All plots cached')

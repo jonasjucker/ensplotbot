@@ -101,7 +101,7 @@ def main():
                             restart=True)
             logging.info('Bot restarted')
 
-        snooze = 5
+        snooze = 1
         logging.debug(f'snooze {snooze}s ...')
         time.sleep(snooze)
 
