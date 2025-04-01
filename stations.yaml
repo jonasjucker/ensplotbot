@@ -4,254 +4,254 @@
   lat: 47.3667
   lon: 8.55
   
-#- name: Winterthur
-#  region: Zurich
-#  lat: 47.5056
-#  lon: 8.72413
-#  
-#- name: Embrach
-#  region: Zurich
-#  lat: 47.5056
-#  lon: 8.59406
-#
-#- name: Uster
-#  region: Zurich
-#  lat: 47.3471
-#  lon: 8.72091
-#
-## Eastern Switzerland
-#- name: St. Gallen
-#  api_name: Sankt+Gallen
-#  region: Eastern Switzerland
-#  lat: 47.4239
-#  lon: 9.37477
-#
-#- name: Appenzell
-#  region: Eastern Switzerland
-#  lat: 47.331
-#  lon: 9.40996
-#
-#- name: Frauenfeld
-#  region: Eastern Switzerland
-#  lat: 47.5578
-#  lon: 8.89893
-#
-## Aargau/Solothurn
-#- name: Aarau
-#  region: Aargau/Solothurn
-#  lat: 47.3925
-#  lon: 8.04422
-#
-#- name: Solothurn
-#  region: Aargau/Solothurn
-#  lat: 47.2079
-#  lon: 7.53714
-#
-#- name: Olten
-#  region: Aargau/Solothurn
-#  lat: 47.35
-#  lon: 7.90329
-#
-#- name: Baden
-#  region: Aargau/Solothurn
-#  lat: 47.4733
-#  lon: 8.30592
-#
-## Grisons
-#- name: Chur
-#  region: Grisons
-#  lat: 46.8499
-#  lon: 9.53287
-#
-#- name: Davos
-#  region: Grisons
-#  lat: 46.8043
-#  lon: 9.83723
-#
-#- name: Flims
-#  region: Grisons
-#  lat: 46.8371
-#  lon: 9.28458
-#
-#- name: Tschiertschen
-#  region: Grisons
-#  lat: 46.8177
-#  lon: 9.60638
-#
-#- name: St. Moritz
-#  api_name: St.+Moritz
-#  region: Grisons
-#  lat: 46.4994
-#  lon: 9.84327
-#
-#- name: Arosa
-#  region: Grisons
-#  lat: 46.7779
-#  lon: 9.67621
-#
-#- name: Disentis
-#  region: Grisons
-#  lat: 46.7034
-#  lon: 8.8509
-#
-## Basilea
-#- name: Basel
-#  region: Basilea
-#  lat: 47.5584
-#  lon: 7.57327
-#
-#- name: Liestal
-#  region: Basilea
-#  lat: 47.485
-#  lon: 7.732
-#
-## Ticino
-#- name: Locarno
-#  region: Ticino
-#  lat: 46.1709
-#  lon: 8.79953
-#
-#- name: Lugano
-#  region: Ticino
-#  lat: 46.0101
-#  lon: 8.96004
-#
-#- name: Bellinzona
-#  region: Ticino
-#  lat: 46.1928
-#  lon: 9.01703
-#
-#- name: Airolo
-#  region: Ticino
-#  lat: 46.5285
-#  lon: 8.61189
-#  
-## Glarus
-#- name: Elm
-#  region: Glarus
-#  lat: 46.919
-#  lon: 9.17242
-#
-#- name: Braunwald
-#  region: Glarus
-#  lat: 46.9416
-#  lon: 8.99643
-#
-## Romandie
-#- name: Lausanne
-#  region: Romandie
-#  lat: 46.516
-#  lon: 6.63282
-#
-#- name: Fribourg
-#  region: Romandie
-#  lat: 46.8024 
-#  lon: 7.15128
-#
-#- name: Delemont
-#  api_name: Del%C3%A9mont
-#  region: Romandie
-#  lat: 47.3649
-#  lon: 7.34453
-#
-#- name: Montreux
-#  region: Romandie
-#  lat: 46.433
-#  lon: 6.91143
-#
-#- name: Geneva
-#  api_name: Gen%C3%A8ve 
-#  region: Romandie
-#  lat: 46.2022
-#  lon: 6.14569
-#
-#- name: Neuchatel
-#  api_name: Neuch%C3%A2tel
-#  region: Romandie
-#  lat: 46.9918
-#  lon: 6.931
-#
-## Central Switzerland
-#- name: Zug
-#  region: Central Switzerland
-#  lat: 47.1724
-#  lon: 8.51745
-#
-#- name: Luzern
-#  region: Central Switzerland
-#  lat: 47.0505
-#  lon: 8.30635
-#
-#- name: Stoos
-#  region: Central Switzerland
-#  lat: 46.9767
-#  lon: 8.66323
-#
-#- name: Andermatt
-#  region: Central Switzerland
-#  lat: 46.6357
-#  lon: 8.59388
-#
-#- name: Engelberg
-#  region: Central Switzerland
-#  lat: 46.8211
-#  lon: 8.40133
-#
-## Valais
-#- name: Sitten
-#  region: Valais
-#  lat: 46.2274
-#  lon: 7.35559
-#
-#- name: Zermatt
-#  region: Valais
-#  lat: 46.02
-#  lon: 7.74863
-#
-#- name: Saas Fee
-#  region: Valais
-#  lat: 46.1081
-#  lon: 7.92741
-#
-#- name: Crans-Montana
-#  region: Valais
-#  lat: 46.3132
-#  lon: 7.47914
-#
-#- name: Bettmeralp
-#  region: Valais
-#  lat: 46.3902
-#  lon: 8.06254
-#
-## Canton Berne
-#- name: Bern
-#  region: Canton Berne
-#  lat: 46.9481
-#  lon: 7.44744
-#
-#- name: Thun
-#  region: Canton Berne
-#  lat: 46.7512
-#  lon: 7.62166
-#
-#- name: Interlaken
-#  region: Canton Berne
-#  lat: 46.6839
-#  lon: 7.86638
-#
-#- name: Grindelwald
-#  region: Canton Berne
-#  lat: 46.624
-#  lon: 8.03601
-#
-#- name: Adelboden
-#  region: Canton Berne
-#  lat: 46.4914
-#  lon: 7.56031
-#
-#- name: Biel-Bienne
-#  api_name: Biel%2FBienne
-#  region: Canton Berne
-#  lat: 47.1371
-#  lon: 7.24608
+- name: Winterthur
+  region: Zurich
+  lat: 47.5056
+  lon: 8.72413
+  
+- name: Embrach
+  region: Zurich
+  lat: 47.5056
+  lon: 8.59406
+
+- name: Uster
+  region: Zurich
+  lat: 47.3471
+  lon: 8.72091
+
+# Eastern Switzerland
+- name: St. Gallen
+  api_name: Sankt+Gallen
+  region: Eastern Switzerland
+  lat: 47.4239
+  lon: 9.37477
+
+- name: Appenzell
+  region: Eastern Switzerland
+  lat: 47.331
+  lon: 9.40996
+
+- name: Frauenfeld
+  region: Eastern Switzerland
+  lat: 47.5578
+  lon: 8.89893
+
+# Aargau/Solothurn
+- name: Aarau
+  region: Aargau/Solothurn
+  lat: 47.3925
+  lon: 8.04422
+
+- name: Solothurn
+  region: Aargau/Solothurn
+  lat: 47.2079
+  lon: 7.53714
+
+- name: Olten
+  region: Aargau/Solothurn
+  lat: 47.35
+  lon: 7.90329
+
+- name: Baden
+  region: Aargau/Solothurn
+  lat: 47.4733
+  lon: 8.30592
+
+# Grisons
+- name: Chur
+  region: Grisons
+  lat: 46.8499
+  lon: 9.53287
+
+- name: Davos
+  region: Grisons
+  lat: 46.8043
+  lon: 9.83723
+
+- name: Flims
+  region: Grisons
+  lat: 46.8371
+  lon: 9.28458
+
+- name: Tschiertschen
+  region: Grisons
+  lat: 46.8177
+  lon: 9.60638
+
+- name: St. Moritz
+  api_name: St.+Moritz
+  region: Grisons
+  lat: 46.4994
+  lon: 9.84327
+
+- name: Arosa
+  region: Grisons
+  lat: 46.7779
+  lon: 9.67621
+
+- name: Disentis
+  region: Grisons
+  lat: 46.7034
+  lon: 8.8509
+
+# Basilea
+- name: Basel
+  region: Basilea
+  lat: 47.5584
+  lon: 7.57327
+
+- name: Liestal
+  region: Basilea
+  lat: 47.485
+  lon: 7.732
+
+# Ticino
+- name: Locarno
+  region: Ticino
+  lat: 46.1709
+  lon: 8.79953
+
+- name: Lugano
+  region: Ticino
+  lat: 46.0101
+  lon: 8.96004
+
+- name: Bellinzona
+  region: Ticino
+  lat: 46.1928
+  lon: 9.01703
+
+- name: Airolo
+  region: Ticino
+  lat: 46.5285
+  lon: 8.61189
+  
+# Glarus
+- name: Elm
+  region: Glarus
+  lat: 46.919
+  lon: 9.17242
+
+- name: Braunwald
+  region: Glarus
+  lat: 46.9416
+  lon: 8.99643
+
+# Romandie
+- name: Lausanne
+  region: Romandie
+  lat: 46.516
+  lon: 6.63282
+
+- name: Fribourg
+  region: Romandie
+  lat: 46.8024 
+  lon: 7.15128
+
+- name: Delemont
+  api_name: Del%C3%A9mont
+  region: Romandie
+  lat: 47.3649
+  lon: 7.34453
+
+- name: Montreux
+  region: Romandie
+  lat: 46.433
+  lon: 6.91143
+
+- name: Geneva
+  api_name: Gen%C3%A8ve 
+  region: Romandie
+  lat: 46.2022
+  lon: 6.14569
+
+- name: Neuchatel
+  api_name: Neuch%C3%A2tel
+  region: Romandie
+  lat: 46.9918
+  lon: 6.931
+
+# Central Switzerland
+- name: Zug
+  region: Central Switzerland
+  lat: 47.1724
+  lon: 8.51745
+
+- name: Luzern
+  region: Central Switzerland
+  lat: 47.0505
+  lon: 8.30635
+
+- name: Stoos
+  region: Central Switzerland
+  lat: 46.9767
+  lon: 8.66323
+
+- name: Andermatt
+  region: Central Switzerland
+  lat: 46.6357
+  lon: 8.59388
+
+- name: Engelberg
+  region: Central Switzerland
+  lat: 46.8211
+  lon: 8.40133
+
+# Valais
+- name: Sitten
+  region: Valais
+  lat: 46.2274
+  lon: 7.35559
+
+- name: Zermatt
+  region: Valais
+  lat: 46.02
+  lon: 7.74863
+
+- name: Saas Fee
+  region: Valais
+  lat: 46.1081
+  lon: 7.92741
+
+- name: Crans-Montana
+  region: Valais
+  lat: 46.3132
+  lon: 7.47914
+
+- name: Bettmeralp
+  region: Valais
+  lat: 46.3902
+  lon: 8.06254
+
+# Canton Berne
+- name: Bern
+  region: Canton Berne
+  lat: 46.9481
+  lon: 7.44744
+
+- name: Thun
+  region: Canton Berne
+  lat: 46.7512
+  lon: 7.62166
+
+- name: Interlaken
+  region: Canton Berne
+  lat: 46.6839
+  lon: 7.86638
+
+- name: Grindelwald
+  region: Canton Berne
+  lat: 46.624
+  lon: 8.03601
+
+- name: Adelboden
+  region: Canton Berne
+  lat: 46.4914
+  lon: 7.56031
+
+- name: Biel-Bienne
+  api_name: Biel%2FBienne
+  region: Canton Berne
+  lat: 47.1371
+  lon: 7.24608
 
