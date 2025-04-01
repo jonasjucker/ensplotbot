@@ -6,6 +6,7 @@ import sys
 
 from ecmwf import EcmwfApi
 from bot import PlotBot
+from logger_config import logger
 
 
 def stop(bot):
@@ -32,7 +33,8 @@ def main():
     parser.add_argument('--bot_backup',
                         dest='bot_backup', \
                         type=str, \
-                        help='Backup folder, used to store bot state and cache plots')
+                        default='backup',
+                        help='Backup folder for the bot')
 
     parser.add_argument('--admin_id',
                         dest='admin_id', \
@@ -50,13 +52,7 @@ def main():
 
     args = parser.parse_args()
 
-    # Enable logging
-    logging.basicConfig(
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        level=args.log_level,
-    )
-
-    logger = logging.getLogger(__name__)
+    logger.setLevel(args.log_level)
 
     with open('stations.yaml', 'r') as file:
         station_config = yaml.safe_load(file)
@@ -68,10 +64,10 @@ def main():
                     args.admin_id,
                     restart=False)
 
-    ecmwf = EcmwfApi(station_config, arg.bot_backup)
+    ecmwf = EcmwfApi(station_config)
     ecmwf.override_base_time_from_init()
 
-    logging.info('Enter infinite loop')
+    logger.info('Enter infinite loop')
 
     while True:
 
@@ -88,8 +84,8 @@ def main():
             ecmwf.upgrade_basetime_stations()
             ecmwf.cache_plots()
         except Exception as e:
-            logging.error(f'An error occured: {e}')
-            logging.error('Restart required')
+            logger.error(f'An error occured: {e}')
+            logger.error('Restart required')
             stop(bot)
 
         if bot.restart_required():
@@ -99,10 +95,10 @@ def main():
                             args.bot_backup,
                             args.admin_id,
                             restart=True)
-            logging.info('Bot restarted')
+            logger.info('Bot restarted')
 
-        snooze = 1
-        logging.debug(f'snooze {snooze}s ...')
+        snooze = 5
+        logger.debug(f'snooze {snooze}s ...')
         time.sleep(snooze)
 
 

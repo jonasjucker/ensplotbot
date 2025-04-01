@@ -1,13 +1,13 @@
 import requests
 import json
 import datetime
-import logging
 import retry
 
 import pandas as pd
 
 from constants import ALL_EPSGRAM
 from location import APILocation
+from logger_config import logger
 
 
 class EcmwfApi():
@@ -24,7 +24,7 @@ class EcmwfApi():
 
         # for performance reasons we set to base_time from API-schema, can be wrong
         # so we need to check if it is valid after the init of all stations
-        logging.info('base_time set to {}'.format(self._base_time))
+        logger.info('base_time set to {}'.format(self._base_time))
         for Station in self._stations:
             Station.base_time = self._base_time
 
@@ -32,7 +32,7 @@ class EcmwfApi():
         for Station in self._stations:
             latest_run = self._latest_confirmed_run(Station)
             if latest_run > Station.base_time:
-                logging.info('Overriding {} base_time from {} to {}'.format(
+                logger.info('Overriding {} base_time from {} to {}'.format(
                     Station.name, Station.base_time, latest_run))
                 Station.upgrade_basetime(latest_run)
 
@@ -45,7 +45,7 @@ class EcmwfApi():
             t_now_rounded = t_now_rounded - datetime.timedelta(hours=12)
 
         latest_run = t_now_rounded.strftime(self._time_format)
-        logging.debug('latest run: {}'.format(latest_run))
+        logger.debug('latest run: {}'.format(latest_run))
 
         return latest_run
 
@@ -54,9 +54,9 @@ class EcmwfApi():
             new_base_time = self._fetch_available_base_time(fallback=False)
             if new_base_time != self._base_time:
                 self._base_time = new_base_time
-                logging.info('base_time updated to {}'.format(self._base_time))
+                logger.info('base_time updated to {}'.format(self._base_time))
         except ValueError:
-            logging.debug('Upgrading base_time failed, keeping {}'.format(
+            logger.debug('Upgrading base_time failed, keeping {}'.format(
                 self._base_time))
             pass
 
@@ -116,20 +116,20 @@ class EcmwfApi():
 
     def _get_with_request(self, link, raise_on_error=True):
         get = '{}{}'.format(self._API_URL, link)
-        logging.debug('GET {}'.format(get))
+        logger.debug('GET {}'.format(get))
         result = requests.get(get)
 
         if not result.ok and raise_on_error:
             raise ValueError('Request failed for {}'.format(get))
         else:
             if result.status_code == 403:
-                logging.info('403 Forbidden for {}'.format(get))
+                logger.info('403 Forbidden for {}'.format(get))
                 raise ValueError('403 Forbidden for {}'.format(get))
             else:
                 try:
                     return result.json()
                 except json.decoder.JSONDecodeError:
-                    logging.info('JSONDecodeError for {}'.format(get))
+                    logger.info('JSONDecodeError for {}'.format(get))
                     raise ValueError('JSONDecodeError for {}'.format(get))
 
     def _get_API_data_for_epsgram(self,
@@ -158,7 +158,7 @@ class EcmwfApi():
         file = "./{}_{}.png".format(station.name, eps_type)
         with open(file, "wb") as img:
             img.write(image.content)
-        logging.info("image saved in {}".format(file))
+        logger.info("image saved in {}".format(file))
         return file
 
     def download_plots(self, requested_stations):
@@ -180,14 +180,14 @@ class EcmwfApi():
             confirmed_base_time = self._latest_confirmed_run(station)
 
             if confirmed_base_time == self._base_time:
-                logging.debug('base_time for {} updated to {}'.format(
+                logger.debug('base_time for {} updated to {}'.format(
                     station.name, confirmed_base_time))
 
                 # base_time needs update before fetch
                 # if not updated, bot sends endless plots to users
                 station.upgrade_basetime(confirmed_base_time)
             else:
-                logging.debug('base_time for {} {} and {} are the same'.format(
+                logger.debug('base_time for {} {} and {} are the same'.format(
                     station.name, station.base_time, confirmed_base_time))
 
     def download_latest_plots(self, requested_stations):
@@ -202,12 +202,12 @@ class EcmwfApi():
         return plots_for_broadcast
 
     def _download_plots(self, Station):
-        logging.info('Fetch plots for {}'.format(Station.name))
+        logger.info('Fetch plots for {}'.format(Station.name))
         plots = {}
         eps = []
         if Station.plots_cached:
             plots[Station.name] = Station.all_plots
-            logging.info(f'{Station.name}: Plots cached')
+            logger.info(f'{Station.name}: Plots cached')
         else:
             try:
                 for type in ALL_EPSGRAM:
@@ -218,7 +218,7 @@ class EcmwfApi():
                 plots[Station.name] = eps
                 Station.plots_cached = True
             except ValueError as e:
-                logging.warning('Could not fetch plots for {}'.format(
+                logger.warning('Could not fetch plots for {}'.format(
                     Station.name))
                 plots.clear()
 
@@ -235,7 +235,7 @@ class EcmwfApi():
         if uncached:
             # only pick one element to not block the main thread
             s = uncached.pop()
-            logging.info(f'Start caching for {s.name}')
+            logger.info(f'Start caching for {s.name}')
             self._download_plots(s)
         else:
-            logging.debug(f'All plots cached')
+            logger.debug(f'All plots cached')

@@ -1,5 +1,4 @@
-import logging
-import time
+
 import os
 
 from telegram import ReplyKeyboardMarkup, Update, ReplyKeyboardRemove
@@ -13,6 +12,7 @@ from telegram.ext import (
     CallbackContext,
 )
 
+from logger_config import logger
 STATION_SELECT_ONE_TIME, STATION_SELECT_SUBSCRIBE, ONE_TIME, SUBSCRIBE, UNSUBSCRIBE = range(
     5)
 TIMEOUT = 60
@@ -128,7 +128,7 @@ class PlotBot:
         self._dp.add_handler(one_time_forecast_handler)
         self._dp.add_error_handler(self._error)
 
-        logging.info(self._collect_bot_data(short=True))
+        logger.info(self._collect_bot_data(short=True))
 
     def connect(self):
         self.updater.start_polling()
@@ -277,13 +277,13 @@ class PlotBot:
             reply_markup=ReplyKeyboardRemove(),
         )
         self._revoke_subscription(user.id, msg_text, context.bot_data)
-        logging.info(f' {user.first_name} unsubscribed for Station {msg_text}')
+        logger.info(f' {user.first_name} unsubscribed for Station {msg_text}')
 
         return ConversationHandler.END
 
     def _log_stats_and_send_to_admin(self):
         stats = self._collect_bot_data()
-        logging.info(stats)
+        logger.info(stats)
         if self._admin_id:
             self._dp.bot.send_message(chat_id=self._admin_id, text=stats)
 
@@ -298,7 +298,7 @@ class PlotBot:
         )
         self._register_subscription(user.id, msg_text, context.bot_data)
 
-        logging.info(f' {user.first_name} subscribed for Station {msg_text}')
+        logger.info(f' {user.first_name} subscribed for Station {msg_text}')
 
         self._log_stats_and_send_to_admin()
 
@@ -315,7 +315,7 @@ class PlotBot:
         )
         self._one_time_forecast_requests[msg_text].add(user.id)
 
-        logging.info(
+        logger.info(
             f' {user.first_name} requested forecast for Station {msg_text}')
 
         return ConversationHandler.END
@@ -346,7 +346,7 @@ class PlotBot:
 
     def _cancel(self, update: Update, context: CallbackContext) -> int:
         user = update.message.from_user
-        logging.info("User %s canceled the conversation.", user.first_name)
+        logger.info("User %s canceled the conversation.", user.first_name)
         update.message.reply_text('Bye! I hope we can talk again some day.',
                                   reply_markup=ReplyKeyboardRemove())
 
@@ -372,14 +372,14 @@ class PlotBot:
         ]
 
     def _send_plot_to_user(self, plots, station_name, user_id):
-        logging.debug(f'Send plot to user: {user_id}')
+        logger.debug(f'Send plot to user: {user_id}')
         try:
             self._dp.bot.send_message(chat_id=user_id, text=station_name)
             for plot in plots[station_name]:
                 self._dp.bot.send_photo(chat_id=user_id,
                                         photo=open(plot, 'rb'))
         except:
-            logging.warning(f'Could not send plot to user: {user_id}')
+            logger.warning(f'Could not send plot to user: {user_id}')
 
     def _send_plots(self, plots, requests):
         for station_name, users in requests.items():
@@ -388,7 +388,7 @@ class PlotBot:
 
     def send_plots_to_new_subscribers(self, plots):
         self._send_plots(plots, self._subscriptions)
-        logging.info('plots sent to new subscribers')
+        logger.info('plots sent to new subscribers')
 
         self._subscriptions = {
             station: set()
@@ -397,7 +397,7 @@ class PlotBot:
 
     def send_one_time_forecast(self, plots):
         self._send_plots(plots, self._one_time_forecast_requests)
-        logging.info('plots sent to one time forecast requests')
+        logger.info('plots sent to one time forecast requests')
 
         self._one_time_forecast_requests = {
             station: set()
@@ -426,4 +426,4 @@ class PlotBot:
             for station_name in plots:
                 for user_id in self._dp.bot_data.get(station_name, set()):
                     self._send_plot_to_user(plots, station_name, user_id)
-            logging.info('plots sent to all users')
+            logger.info('plots sent to all users')
