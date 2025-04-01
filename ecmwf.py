@@ -110,7 +110,7 @@ class EcmwfApi():
     def _get_from_API_no_retry(self, link, raise_on_error=True):
         return self._get_with_request(link, raise_on_error)
 
-    @retry.retry(tries=10, delay=0.5)
+    @retry.retry(tries=10, delay=0.5, logger=None)
     def _get_from_API_retry(self, link, raise_on_error=True):
         return self._get_with_request(link, raise_on_error)
 
@@ -123,13 +123,11 @@ class EcmwfApi():
             raise ValueError('Request failed for {}'.format(get))
         else:
             if result.status_code == 403:
-                logger.info('403 Forbidden for {}'.format(get))
                 raise ValueError('403 Forbidden for {}'.format(get))
             else:
                 try:
                     return result.json()
                 except json.decoder.JSONDecodeError:
-                    logger.info('JSONDecodeError for {}'.format(get))
                     raise ValueError('JSONDecodeError for {}'.format(get))
 
     def _get_API_data_for_epsgram(self,
@@ -158,7 +156,7 @@ class EcmwfApi():
         file = "./{}_{}.png".format(station.name, eps_type)
         with open(file, "wb") as img:
             img.write(image.content)
-        logger.info("image saved in {}".format(file))
+        logger.debug("image saved in {}".format(file))
         return file
 
     def download_plots(self, requested_stations):
@@ -202,13 +200,13 @@ class EcmwfApi():
         return plots_for_broadcast
 
     def _download_plots(self, Station):
-        logger.info('Fetch plots for {}'.format(Station.name))
         plots = {}
         eps = []
         if Station.plots_cached:
             plots[Station.name] = Station.all_plots
             logger.info(f'{Station.name}: Plots cached')
         else:
+            logger.info(f'{Station.name}: Fetching plots')
             try:
                 for type in ALL_EPSGRAM:
                     image_api = self._request_epsgram_link_for_station(
