@@ -9,10 +9,10 @@ import pandas as pd
 from constants import ALL_EPSGRAM
 from location import APILocation
 
+
 class EcmwfApi():
 
     def __init__(self, station_config):
-
 
         self._API_URL = "https://charts.ecmwf.int/opencharts-api/v1/"
         self._stations = [

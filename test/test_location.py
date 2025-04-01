@@ -9,6 +9,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from location import APILocation
 from constants import ALL_EPSGRAM
 
+
 @pytest.fixture
 def station_config():
     with open('stations.yaml', 'r') as file:
@@ -49,8 +50,12 @@ def test_station_config_has_no_conflict_with_name_and_region(station_config):
         assert station[
             'region'] not in names, f"{station['region']} is already a station name"
 
+
 def test_init_location():
-    location = APILocation(name="TestStation", lat=47.0, lon=8.0, region="Zurich")
+    location = APILocation(name="TestStation",
+                           lat=47.0,
+                           lon=8.0,
+                           region="Zurich")
     assert location.name == "TestStation"
     assert location.lat == 47.0
     assert location.lon == 8.0
@@ -58,12 +63,17 @@ def test_init_location():
     assert location.base_time is None
     assert location.has_been_broadcasted is True
     assert location.plots_cached is False
-    assert location.all_plots == [f'./TestStation_{i}.png' for i in ALL_EPSGRAM]
+    assert location.all_plots == [
+        f'./TestStation_{i}.png' for i in ALL_EPSGRAM
+    ]
+
 
 def test_upgrade_basetime():
-    location = APILocation(name="TestStation", lat=47.0, lon=8.0, region="Zurich")
+    location = APILocation(name="TestStation",
+                           lat=47.0,
+                           lon=8.0,
+                           region="Zurich")
     location.upgrade_basetime("2023-10-01 12:00")
     assert location.base_time == "2023-10-01 12:00"
     assert location.has_been_broadcasted is False
     assert location.plots_cached is False
-
