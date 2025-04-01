@@ -32,7 +32,7 @@ def main():
     parser.add_argument('--bot_backup',
                         dest='bot_backup', \
                         type=str, \
-                        help='Backup folder for the bot')
+                        help='Backup folder, used to store bot state and cache plots')
 
     parser.add_argument('--admin_id',
                         dest='admin_id', \
@@ -68,7 +68,7 @@ def main():
                     args.admin_id,
                     restart=False)
 
-    ecmwf = EcmwfApi(station_config)
+    ecmwf = EcmwfApi(station_config, arg.bot_backup)
     ecmwf.override_base_time_from_init()
 
     logging.info('Enter infinite loop')

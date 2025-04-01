@@ -1,41 +1,23 @@
 import requests
 import json
 import datetime
-import time
 import logging
 import retry
 
 import pandas as pd
 
-d10_plume = 'classical_plume'
-d10_eps = 'classical_10d'
-d15_eps = 'classical_15d'
-
-ALL_EPSGRAM = [d10_plume, d10_eps, d15_eps]
-
+from constants import ALL_EPSGRAM
+from location import APILocation
 
 class EcmwfApi():
 
     def __init__(self, station_config):
 
-        class Station():
-
-            def __init__(self, name, lat, lon, region, api_name=None):
-                self.name = name
-                self.api_name = name if api_name is None else api_name
-                self.lat = lat
-                self.lon = lon
-                self.region = region
-                self.base_time = None
-                self.has_been_broadcasted = False
-                self.plots_cached = False
-                self.all_plots = [f'./{name}_{i}.png' for i in ALL_EPSGRAM]
 
         self._API_URL = "https://charts.ecmwf.int/opencharts-api/v1/"
         self._stations = [
-            Station(**station_data) for station_data in station_config
+            APILocation(**station_data) for station_data in station_config
         ]
-        self._epsgrams = ALL_EPSGRAM
         self._time_format = '%Y-%m-%dT%H:%M:%SZ'
         self._base_time = self._fetch_available_base_time(fallback=True,
                                                           timeshift=0)
@@ -52,7 +34,7 @@ class EcmwfApi():
             if latest_run > Station.base_time:
                 logging.info('Overriding {} base_time from {} to {}'.format(
                     Station.name, Station.base_time, latest_run))
-                Station.base_time = latest_run
+                Station.upgrade_basetime(latest_run)
 
     def _first_guess_base_time(self):
         t_now = datetime.datetime.now()
@@ -97,7 +79,7 @@ class EcmwfApi():
     def _latest_confirmed_run(self, station):
         # check if forecast for basetime is available for all epsgrams
         base_time = set()
-        for eps_type in self._epsgrams:
+        for eps_type in ALL_EPSGRAM:
             try:
                 self._get_API_data_for_epsgram(station,
                                                self._base_time,
@@ -203,11 +185,7 @@ class EcmwfApi():
 
                 # base_time needs update before fetch
                 # if not updated, bot sends endless plots to users
-                station.base_time = confirmed_base_time
-                # flag for broadcast
-                station.has_been_broadcasted = False
-                # flag for plot cache
-                station.plots_cached = False
+                station.upgrade_basetime(confirmed_base_time)
             else:
                 logging.debug('base_time for {} {} and {} are the same'.format(
                     station.name, station.base_time, confirmed_base_time))
@@ -232,7 +210,7 @@ class EcmwfApi():
             logging.info(f'{Station.name}: Plots cached')
         else:
             try:
-                for type in self._epsgrams:
+                for type in ALL_EPSGRAM:
                     image_api = self._request_epsgram_link_for_station(
                         Station, type)
                     eps.append(

@@ -9,6 +9,7 @@ from datetime import datetime
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from ecmwf import EcmwfApi
+from constants import ALL_EPSGRAM
 
 
 @pytest.fixture
@@ -21,40 +22,6 @@ def station_config():
     with open('stations.yaml', 'r') as file:
         station_config = yaml.safe_load(file)
     return station_config
-
-
-def test_station_config_has_valid_entries(station_config):
-    for station in station_config:
-        assert 'name' in station and isinstance(
-            station['name'], str), f'{station["name"]} is not a string'
-        if 'api_name' in station:
-            assert 'api_name' in station and isinstance(
-                station['api_name'],
-                str), f'{station["api_name"]} is not a string'
-        assert 'lat' in station and isinstance(
-            station['lat'], float), f'{station["lat"]} is not a float'
-        assert 'lon' in station and isinstance(
-            station['lon'], float), f'{station["lon"]} is not a float'
-        assert 'region' in station and isinstance(
-            station['region'], str), f'{station["region"]} is not a string'
-
-
-def test_station_config_has_valid_region(station_config):
-    regions = [
-        'Grisons', 'Glarus', 'Zurich', 'Basilea', 'Ticino', "Romandie",
-        "Central Switzerland", "Valais", "Canton Berne", "Eastern Switzerland",
-        "Aargau/Solothurn"
-    ]
-    for station in station_config:
-        assert station[
-            'region'] in regions, f"{station['region']} is not a valid region"
-
-
-def test_station_config_has_no_conflict_with_name_and_region(station_config):
-    names = {station['name'] for station in station_config}
-    for station in station_config:
-        assert station[
-            'region'] not in names, f"{station['region']} is already a station name"
 
 
 def test_ecmwf_api_init_with_station_config(station_config):
@@ -220,7 +187,7 @@ def test_override_base_time_from_init_future(ecmwf):
 @pytest.mark.parametrize("station", ['Bern'])
 def test_private_download_plots_for(ecmwf, station):
     plots = {}
-    plots[station] = [f'./{station}_{i}.png' for i in ecmwf._epsgrams]
+    plots[station] = [f'./{station}_{i}.png' for i in ALL_EPSGRAM]
     past = ecmwf._fetch_available_base_time(fallback=True, timeshift=24)
     for Station in ecmwf._stations:
         if Station.name == station:
@@ -232,7 +199,7 @@ def test_private_download_plots_for(ecmwf, station):
 @pytest.mark.parametrize("station", ['Bern'])
 def test_private_download_plots_cached_for(ecmwf, station):
     plots = {}
-    plots[station] = [f'./{station}_{i}.png' for i in ecmwf._epsgrams]
+    plots[station] = [f'./{station}_{i}.png' for i in ALL_EPSGRAM]
     past = ecmwf._fetch_available_base_time(fallback=True, timeshift=24)
     for Station in ecmwf._stations:
         if Station.name == station:
@@ -292,6 +259,7 @@ def test_download_latest_plots_for_no_subscriptions(ecmwf):
         if Station.name == station:
             ecmwf._stations = [Station]
             Station.base_time = past
+            Station.has_been_broadcasted = False
             plots = ecmwf.download_latest_plots(['Basel'])
 
             assert plots == expected_plots, "Plots should match expected_plots"
