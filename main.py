@@ -72,6 +72,8 @@ def main():
     while True:
 
         try:
+            ecmwf.upgrade_basetime_global()
+            ecmwf.upgrade_basetime_stations()
             if bot.has_new_subscribers_waiting():
                 bot.send_plots_to_new_subscribers(
                     ecmwf.download_plots(bot.stations_of_new_subscribers()))
@@ -80,8 +82,6 @@ def main():
                     ecmwf.download_plots(bot.stations_of_one_time_request()))
             bot.broadcast(
                 ecmwf.download_latest_plots(bot.stations_with_subscribers()))
-            ecmwf.upgrade_basetime_global()
-            ecmwf.upgrade_basetime_stations()
             ecmwf.cache_plots()
         except Exception as e:
             logger.error(f'An error occured: {e}')
