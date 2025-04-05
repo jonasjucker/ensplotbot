@@ -255,3 +255,9 @@
   lat: 47.1371
   lon: 7.24608
 
+# France
+- name: Chamonix-Mont-Blanc
+  region: France
+  lat: 45.9238
+  lon: 6.86933
+
