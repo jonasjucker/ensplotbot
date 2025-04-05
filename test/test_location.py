@@ -37,7 +37,7 @@ def test_station_config_has_valid_region(station_config):
     regions = [
         'Grisons', 'Glarus', 'Zurich', 'Basilea', 'Ticino', "Romandie",
         "Central Switzerland", "Valais", "Canton Berne", "Eastern Switzerland",
-        "Aargau/Solothurn"
+        "Aargau/Solothurn", "France"
     ]
     for station in station_config:
         assert station[
