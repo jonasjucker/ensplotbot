@@ -1,4 +1,4 @@
-python-telegram-bot==13.1
+python-telegram-bot[job-queue]==v22.0
 pandas
 requests
 PyYAML

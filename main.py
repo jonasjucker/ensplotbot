@@ -18,7 +18,9 @@ def start_bot(bot, token, station_config, backup, admin_id, restart=False):
     if restart:
         bot.stop()
     bot = PlotBot(token, station_config, backup, admin_id)
+    logger.info('Bot started')
     bot.connect()
+    logger.info('Bot connected')
     return bot
 
 
@@ -52,6 +54,7 @@ def main():
 
     args = parser.parse_args()
 
+    logging.getLogger("httpx").setLevel(logging.WARNING)
     logger.setLevel(args.log_level)
 
     with open('stations.yaml', 'r') as file:
