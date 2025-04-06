@@ -60,7 +60,8 @@ class PlotBot:
         # inverse of all filters above
         self._filter_meaningful_messages = ~self._filter_all_commands & ~self._filter_regions & ~self._filter_stations
 
-        self.app = Application.builder().token(token).persistence(persistence).build()
+        self.app = Application.builder().token(token).persistence(
+            persistence).build()
         #self.updater = Updater(token, persistence=persistence)
         #self.app = self.updater.dispatcher
         # initialize bot_data with empty set for each station if not present
@@ -145,8 +146,10 @@ class PlotBot:
         self.updater.stop()
         self.app.stop()
 
-    async def _overview_locations(self, update: Update, context: CallbackContext):
-        await update.message.reply_markdown("\n".join(self._available_locations()))
+    async def _overview_locations(self, update: Update,
+                                  context: CallbackContext):
+        await update.message.reply_markdown("\n".join(
+            self._available_locations()))
 
     def _available_locations(self):
         text = ["_Available locations_"]
@@ -183,7 +186,8 @@ class PlotBot:
             if user_id in users
         ]
 
-    async def _choose_station(self, update: Update, context: CallbackContext) -> int:
+    async def _choose_station(self, update: Update,
+                              context: CallbackContext) -> int:
         region = update.message.text
         station_of_region = self._get_station_names_for_region(region)
 
@@ -202,12 +206,12 @@ class PlotBot:
         return SUBSCRIBE if not_subscribed_for_all_stations else ConversationHandler.END
 
     async def _choose_all_region(self, update: Update,
-                           context: CallbackContext) -> int:
+                                 context: CallbackContext) -> int:
 
         entry_point = update.message.text
 
-        await self._send_region_keyboard(update,
-                                   [name for name in self._station_regions])
+        await self._send_region_keyboard(
+            update, [name for name in self._station_regions])
 
         # check that entry point is valid
         if entry_point == '/subscribe':
@@ -224,15 +228,16 @@ class PlotBot:
         ]
 
     async def _choose_all_station(self, update: Update,
-                            context: CallbackContext) -> int:
+                                  context: CallbackContext) -> int:
         region = update.message.text
 
-        await self._send_station_keyboard(update,
-                                    self._get_station_names_for_region(region))
+        await self._send_station_keyboard(
+            update, self._get_station_names_for_region(region))
 
         return ONE_TIME
 
-    async def _revoke_station(self, update: Update, context: CallbackContext) -> int:
+    async def _revoke_station(self, update: Update,
+                              context: CallbackContext) -> int:
         user_id = update.message.chat_id
 
         # Get the stations that the user has already subscribed to
@@ -247,10 +252,12 @@ class PlotBot:
 
         return UNSUBSCRIBE if subscription_present else ConversationHandler.END
 
-    async def _send_region_keyboard(self, update: Update, region_names: list[str]):
+    async def _send_region_keyboard(self, update: Update,
+                                    region_names: list[str]):
         return await self._send_keyboard(update, region_names, 'region')
 
-    async def _send_keyboard(self, update: Update, names: list[str], type: str):
+    async def _send_keyboard(self, update: Update, names: list[str],
+                             type: str):
         reply_keyboard = [[name] for name in names]
 
         if reply_keyboard:
@@ -262,15 +269,17 @@ class PlotBot:
             )
             return True
         else:
-            await update.message.reply_text(f"Sorry, no more {type}s for you here",
-                                      reply_markup=ReplyKeyboardRemove())
+            await update.message.reply_text(
+                f"Sorry, no more {type}s for you here",
+                reply_markup=ReplyKeyboardRemove())
             return False
 
-    async def _send_station_keyboard(self, update: Update, station_names: list[str]):
+    async def _send_station_keyboard(self, update: Update,
+                                     station_names: list[str]):
         return await self._send_keyboard(update, station_names, 'station')
 
     async def _unsubscribe_for_station(self, update: Update,
-                                 context: CallbackContext) -> int:
+                                       context: CallbackContext) -> int:
         user = update.message.from_user
         msg_text = update.message.text
         reply_text = f'Unubscribed for Station {msg_text}'
@@ -290,7 +299,7 @@ class PlotBot:
             await self.app.bot.send_message(chat_id=self._admin_id, text=stats)
 
     async def _subscribe_for_station(self, update: Update,
-                               context: CallbackContext) -> int:
+                                     context: CallbackContext) -> int:
         user = update.message.from_user
         msg_text = update.message.text
         reply_text = f"You sucessfully subscribed for {msg_text}. You will receive your first plots in a minute or two..."
@@ -349,8 +358,9 @@ class PlotBot:
     async def _cancel(self, update: Update, context: CallbackContext) -> int:
         user = update.message.from_user
         logger.info("User %s canceled the conversation.", user.first_name)
-        await update.message.reply_text('Bye! I hope we can talk again some day.',
-                                  reply_markup=ReplyKeyboardRemove())
+        await update.message.reply_text(
+            'Bye! I hope we can talk again some day.',
+            reply_markup=ReplyKeyboardRemove())
 
         return ConversationHandler.END
 
