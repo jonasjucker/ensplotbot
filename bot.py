@@ -1,4 +1,5 @@
 import os
+import asyncio
 
 from telegram import ReplyKeyboardMarkup, Update, ReplyKeyboardRemove
 from telegram.ext import (
@@ -7,9 +8,9 @@ from telegram.ext import (
     Application,
     filters,
     ConversationHandler,
-    Updater,
     PicklePersistence,
     CallbackContext,
+    ContextTypes
 )
 
 from logger_config import logger
@@ -23,9 +24,10 @@ class PlotBot:
 
     def __init__(self, token, station_config, backup, admin_id=None):
 
-        # Create the Updater and pass it your bot's token.
-        persistence = PicklePersistence(
+        self._admin_id = admin_id
+        self.persistence = PicklePersistence(
             filepath=os.path.join(backup, 'bot.pkl'))
+        self.app = Application.builder().token(token).persistence(self.persistence).build()
         self._station_names = [station["name"] for station in station_config]
         self._region_of_stations = {
             station["name"]: station["region"]
@@ -60,17 +62,12 @@ class PlotBot:
         # inverse of all filters above
         self._filter_meaningful_messages = ~self._filter_all_commands & ~self._filter_regions & ~self._filter_stations
 
-        self.app = Application.builder().token(token).persistence(
-            persistence).build()
-        #self.updater = Updater(token, persistence=persistence)
-        #self.app = self.updater.dispatcher
-        # initialize bot_data with empty set for each station if not present
+        self._stop = False
+
         [
             self.app.bot_data.setdefault(station, set())
             for station in self._station_names
         ]
-        self._stop = False
-        self._admin_id = admin_id
 
         self.app.add_handler(CommandHandler('start', self._help))
         self.app.add_handler(CommandHandler('help', self._help))
@@ -131,10 +128,25 @@ class PlotBot:
         self.app.add_handler(one_time_forecast_handler)
         self.app.add_error_handler(self._error)
 
+
+    async def botloop(self):
+        # initialize bot_data with empty set for each station if not present
+
+        await self.app.initialize()
+        await self.app.updater.start_polling(allowed_updates=Update.ALL_TYPES)
+        await self.app.start()
+        logger.info("Started bot in thread")
         logger.info(self._collect_bot_data(short=True))
 
+        while True:
+            await asyncio.sleep(1)
+    
+    async def botloop_await(self):
+        bot_routine = asyncio.create_task(self.botloop())
+        await bot_routine
+    
     def connect(self):
-        self.app.run_polling()
+        asyncio.run(self.botloop_await())
 
     def _error(self, update: Update, context: CallbackContext):
         self._stop = True
@@ -142,9 +154,10 @@ class PlotBot:
     def restart_required(self):
         return self._stop
 
-    def stop(self):
-        self.updater.stop()
-        self.app.stop()
+    async def stop(self):
+        await self.app.Updater.stop()
+        await self.app.stop()
+        await self.app.shutdown()
 
     async def _overview_locations(self, update: Update,
                                   context: CallbackContext):
@@ -161,7 +174,7 @@ class PlotBot:
             ])
         return text
 
-    async def _help(self, update: Update, context: CallbackContext):
+    async def _help(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         greetings = "Hi! I am OpenEns. I supply you with ECWMF meteograms for places in Switzerland. \
                     \nTwice a day a new set of meteograms is available, usually at *8:00* for the *00 UTC* run and at *20:00* for the *12 UTC* run. \
@@ -307,6 +320,7 @@ class PlotBot:
             reply_text,
             reply_markup=ReplyKeyboardRemove(),
         )
+        logger.info(context.bot_data)
         self._register_subscription(user.id, msg_text, context.bot_data)
 
         logger.info(f' {user.first_name} subscribed for Station {msg_text}')
@@ -383,23 +397,23 @@ class PlotBot:
             station for station, users in self._subscriptions.items() if users
         ]
 
-    def _send_plot_to_user(self, plots, station_name, user_id):
+    async def _send_plot_to_user(self, plots, station_name, user_id):
         logger.debug(f'Send plot to user: {user_id}')
         try:
             self.app.bot.send_message(chat_id=user_id, text=station_name)
             for plot in plots[station_name]:
-                self.app.bot.send_photo(chat_id=user_id,
+                await self.app.bot.send_photo(chat_id=user_id,
                                         photo=open(plot, 'rb'))
         except:
             logger.warning(f'Could not send plot to user: {user_id}')
 
-    def _send_plots(self, plots, requests):
+    async def _send_plots(self, plots, requests):
         for station_name, users in requests.items():
             for user_id in users:
-                self._send_plot_to_user(plots, station_name, user_id)
+                await self._send_plot_to_user(plots, station_name, user_id)
 
-    def send_plots_to_new_subscribers(self, plots):
-        self._send_plots(plots, self._subscriptions)
+    async def send_plots_to_new_subscribers(self, plots):
+        await self._send_plots(plots, self._subscriptions)
         logger.info('plots sent to new subscribers')
 
         self._subscriptions = {
@@ -407,7 +421,7 @@ class PlotBot:
             for station in self._station_names
         }
 
-    def send_one_time_forecast(self, plots):
+    async def send_one_time_forecast(self, plots):
         self._send_plots(plots, self._one_time_forecast_requests)
         logger.info('plots sent to one time forecast requests')
 
@@ -433,9 +447,9 @@ class PlotBot:
         return sorted(
             [station for station, users in self.app.bot_data.items() if users])
 
-    def broadcast(self, plots):
+    async def broadcast(self, plots):
         if plots:
             for station_name in plots:
                 for user_id in self.app.bot_data.get(station_name, set()):
-                    self._send_plot_to_user(plots, station_name, user_id)
+                    await self._send_plot_to_user(plots, station_name, user_id)
             logger.info('plots sent to all users')

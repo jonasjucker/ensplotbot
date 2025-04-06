@@ -3,6 +3,7 @@ import argparse
 import time
 import yaml
 import sys
+import threading
 
 from ecmwf import EcmwfApi
 from bot import PlotBot
@@ -19,8 +20,9 @@ def start_bot(bot, token, station_config, backup, admin_id, restart=False):
         bot.stop()
     bot = PlotBot(token, station_config, backup, admin_id)
     logger.info('Bot started')
-    bot.connect()
-    logger.info('Bot connected')
+    tg_thread = threading.Thread(target=bot.connect, name=f"bot-thread")
+    tg_thread.daemon = True
+    tg_thread.start()
     return bot
 
 
@@ -55,7 +57,11 @@ def main():
     args = parser.parse_args()
 
     logging.getLogger("httpx").setLevel(logging.WARNING)
-    logger.setLevel(args.log_level)
+    logging.getLogger("apscheduler.scheduler").setLevel(logging.DEBUG)
+    logging.getLogger("telegram.ext.Application").setLevel(logging.DEBUG)
+
+    #logger.setLevel(args.log_level)
+    logger.setLevel(logging.INFO)
 
     with open('stations.yaml', 'r') as file:
         station_config = yaml.safe_load(file)
