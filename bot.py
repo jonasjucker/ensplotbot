@@ -2,16 +2,9 @@ import os
 import asyncio
 
 from telegram import ReplyKeyboardMarkup, Update, ReplyKeyboardRemove
-from telegram.ext import (
-    CommandHandler,
-    MessageHandler,
-    Application,
-    filters,
-    ConversationHandler,
-    PicklePersistence,
-    CallbackContext,
-    ContextTypes
-)
+from telegram.ext import (CommandHandler, MessageHandler, Application, filters,
+                          ConversationHandler, PicklePersistence,
+                          CallbackContext, ContextTypes)
 
 from logger_config import logger
 
@@ -27,7 +20,8 @@ class PlotBot:
         self._admin_id = admin_id
         self.persistence = PicklePersistence(
             filepath=os.path.join(backup, 'bot.pkl'))
-        self.app = Application.builder().token(token).persistence(self.persistence).build()
+        self.app = Application.builder().token(token).persistence(
+            self.persistence).build()
         self._station_names = [station["name"] for station in station_config]
         self._region_of_stations = {
             station["name"]: station["region"]
@@ -128,7 +122,6 @@ class PlotBot:
         self.app.add_handler(one_time_forecast_handler)
         self.app.add_error_handler(self._error)
 
-
     async def botloop(self):
         # initialize bot_data with empty set for each station if not present
 
@@ -140,11 +133,11 @@ class PlotBot:
 
         while True:
             await asyncio.sleep(1)
-    
+
     async def botloop_await(self):
         bot_routine = asyncio.create_task(self.botloop())
         await bot_routine
-    
+
     def connect(self):
         asyncio.run(self.botloop_await())
 
@@ -403,7 +396,7 @@ class PlotBot:
             self.app.bot.send_message(chat_id=user_id, text=station_name)
             for plot in plots[station_name]:
                 await self.app.bot.send_photo(chat_id=user_id,
-                                        photo=open(plot, 'rb'))
+                                              photo=open(plot, 'rb'))
         except:
             logger.warning(f'Could not send plot to user: {user_id}')
 
