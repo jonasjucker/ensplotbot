@@ -21,7 +21,7 @@ class PlotBot:
         self.persistence = PicklePersistence(
             filepath=os.path.join(backup, 'bot.pkl'))
         self.app = Application.builder().token(token).build()
-            #self.persistence).build()
+        #self.persistence).build()
         self._station_names = [station["name"] for station in station_config]
         self._region_of_stations = {
             station["name"]: station["region"]
@@ -133,9 +133,8 @@ class PlotBot:
 
         while not self._stop:
             await asyncio.sleep(1)
-        
-        await self.shutdown()
 
+        await self.shutdown()
 
     def _error(self, update: Update, context: CallbackContext):
         self._stop = False
