@@ -2,12 +2,10 @@ import asyncio
 
 from telegram import ReplyKeyboardMarkup, Update, ReplyKeyboardRemove
 from telegram.ext import (CommandHandler, MessageHandler, Application, filters,
-                          ConversationHandler,
-                          CallbackContext, ContextTypes)
+                          ConversationHandler, CallbackContext, ContextTypes)
 
 from logger_config import logger
-from constants import TIMEOUT_IN_SEC, STATION_SELECT_ONE_TIME, STATION_SELECT_SUBSCRIBE, ONE_TIME, SUBSCRIBE, UNSUBSCRIBE 
-
+from constants import TIMEOUT_IN_SEC, STATION_SELECT_ONE_TIME, STATION_SELECT_SUBSCRIBE, ONE_TIME, SUBSCRIBE, UNSUBSCRIBE
 
 
 class PlotBot:
@@ -49,7 +47,6 @@ class PlotBot:
         # filter for meaningful messages that are explicitly handled by the bot
         # inverse of all filters above
         self._filter_meaningful_messages = ~self._filter_all_commands & ~self._filter_regions & ~self._filter_stations
-
 
         [
             self.app.bot_data.setdefault(station, set())
@@ -126,7 +123,8 @@ class PlotBot:
             await asyncio.sleep(1)
 
     def _error(self, update: Update, context: CallbackContext):
-        logger.error("Exception while handling an update:", exc_info=context.error)
+        logger.error("Exception while handling an update:",
+                     exc_info=context.error)
 
     async def _overview_locations(self, update: Update,
                                   context: CallbackContext):
