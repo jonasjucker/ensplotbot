@@ -20,8 +20,8 @@ class PlotBot:
         self._admin_id = admin_id
         self.persistence = PicklePersistence(
             filepath=os.path.join(backup, 'bot.pkl'))
-        self.app = Application.builder().token(token).persistence(
-            self.persistence).build()
+        self.app = Application.builder().token(token).build()
+            #self.persistence).build()
         self._station_names = [station["name"] for station in station_config]
         self._region_of_stations = {
             station["name"]: station["region"]
@@ -120,35 +120,31 @@ class PlotBot:
         self.app.add_handler(subscription_handler)
         self.app.add_handler(unsubscription_handler)
         self.app.add_handler(one_time_forecast_handler)
-        self.app.add_error_handler(self._error)
+        #self.app.add_error_handler(self._error)
 
-    async def botloop(self):
+    async def connect(self):
         # initialize bot_data with empty set for each station if not present
 
         await self.app.initialize()
         await self.app.updater.start_polling(allowed_updates=Update.ALL_TYPES)
         await self.app.start()
-        logger.info("Started bot in thread")
+        logger.info('Bot connected')
         logger.info(self._collect_bot_data(short=True))
 
-        while True:
+        while not self._stop:
             await asyncio.sleep(1)
+        
+        await self.shutdown()
 
-    async def botloop_await(self):
-        bot_routine = asyncio.create_task(self.botloop())
-        await bot_routine
-
-    def connect(self):
-        asyncio.run(self.botloop_await())
 
     def _error(self, update: Update, context: CallbackContext):
-        self._stop = True
+        self._stop = False
 
     def restart_required(self):
         return self._stop
 
-    async def stop(self):
-        await self.app.Updater.stop()
+    async def shutdown(self):
+        await self.app.updater.stop()
         await self.app.stop()
         await self.app.shutdown()
 
@@ -393,7 +389,7 @@ class PlotBot:
     async def _send_plot_to_user(self, plots, station_name, user_id):
         logger.debug(f'Send plot to user: {user_id}')
         try:
-            self.app.bot.send_message(chat_id=user_id, text=station_name)
+            await self.app.bot.send_message(chat_id=user_id, text=station_name)
             for plot in plots[station_name]:
                 await self.app.bot.send_photo(chat_id=user_id,
                                               photo=open(plot, 'rb'))
@@ -415,7 +411,7 @@ class PlotBot:
         }
 
     async def send_one_time_forecast(self, plots):
-        self._send_plots(plots, self._one_time_forecast_requests)
+        await self._send_plots(plots, self._one_time_forecast_requests)
         logger.info('plots sent to one time forecast requests')
 
         self._one_time_forecast_requests = {
