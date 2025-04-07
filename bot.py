@@ -1,16 +1,13 @@
-import os
 import asyncio
 
 from telegram import ReplyKeyboardMarkup, Update, ReplyKeyboardRemove
 from telegram.ext import (CommandHandler, MessageHandler, Application, filters,
-                          ConversationHandler, PicklePersistence,
+                          ConversationHandler,
                           CallbackContext, ContextTypes)
 
 from logger_config import logger
+from constants import TIMEOUT_IN_SEC, STATION_SELECT_ONE_TIME, STATION_SELECT_SUBSCRIBE, ONE_TIME, SUBSCRIBE, UNSUBSCRIBE 
 
-STATION_SELECT_ONE_TIME, STATION_SELECT_SUBSCRIBE, ONE_TIME, SUBSCRIBE, UNSUBSCRIBE = range(
-    5)
-TIMEOUT = 60
 
 
 class PlotBot:
@@ -18,10 +15,7 @@ class PlotBot:
     def __init__(self, token, station_config, backup, admin_id=None):
 
         self._admin_id = admin_id
-        self.persistence = PicklePersistence(
-            filepath=os.path.join(backup, 'bot.pkl'))
         self.app = Application.builder().token(token).build()
-        #self.persistence).build()
         self._station_names = [station["name"] for station in station_config]
         self._region_of_stations = {
             station["name"]: station["region"]
@@ -56,7 +50,6 @@ class PlotBot:
         # inverse of all filters above
         self._filter_meaningful_messages = ~self._filter_all_commands & ~self._filter_regions & ~self._filter_stations
 
-        self._stop = False
 
         [
             self.app.bot_data.setdefault(station, set())
@@ -86,7 +79,7 @@ class PlotBot:
                 ],
             },
             fallbacks=[CommandHandler('cancel', self._cancel)],
-            conversation_timeout=TIMEOUT,
+            conversation_timeout=TIMEOUT_IN_SEC,
         )
 
         one_time_forecast_handler = ConversationHandler(
@@ -102,7 +95,7 @@ class PlotBot:
                 ],
             },
             fallbacks=[CommandHandler('cancel', self._cancel)],
-            conversation_timeout=TIMEOUT,
+            conversation_timeout=TIMEOUT_IN_SEC,
         )
 
         unsubscription_handler = ConversationHandler(
@@ -114,38 +107,26 @@ class PlotBot:
                 ],
             },
             fallbacks=[CommandHandler('cancel', self._cancel)],
-            conversation_timeout=TIMEOUT,
+            conversation_timeout=TIMEOUT_IN_SEC,
         )
 
         self.app.add_handler(subscription_handler)
         self.app.add_handler(unsubscription_handler)
         self.app.add_handler(one_time_forecast_handler)
-        #self.app.add_error_handler(self._error)
+        self.app.add_error_handler(self._error)
 
     async def connect(self):
-        # initialize bot_data with empty set for each station if not present
-
         await self.app.initialize()
         await self.app.updater.start_polling(allowed_updates=Update.ALL_TYPES)
         await self.app.start()
         logger.info('Bot connected')
         logger.info(self._collect_bot_data(short=True))
 
-        while not self._stop:
+        while True:
             await asyncio.sleep(1)
 
-        await self.shutdown()
-
     def _error(self, update: Update, context: CallbackContext):
-        self._stop = False
-
-    def restart_required(self):
-        return self._stop
-
-    async def shutdown(self):
-        await self.app.updater.stop()
-        await self.app.stop()
-        await self.app.shutdown()
+        logger.error("Exception while handling an update:", exc_info=context.error)
 
     async def _overview_locations(self, update: Update,
                                   context: CallbackContext):

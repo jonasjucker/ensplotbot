@@ -26,10 +26,10 @@ def run_asyncio_in_thread(func, name, *args):
                               daemon=True,
                               args=[func, *args])
     thread.start()
-    logging.info(f'Started thread: {name}')
+    logging.debug(f'Started thread: {name}')
 
 
-def start_bot(bot, token, station_config, backup, admin_id):
+def start_bot(token, station_config, backup, admin_id):
     bot = PlotBot(token, station_config, backup, admin_id)
     run_asyncio_in_thread(bot.connect, 'bot-connect')
     return bot
@@ -66,15 +66,13 @@ def main():
     args = parser.parse_args()
 
     logging.getLogger("httpx").setLevel(logging.WARNING)
-    logging.getLogger("apscheduler.scheduler").setLevel(logging.DEBUG)
-    logging.getLogger("telegram.ext.Application").setLevel(logging.DEBUG)
 
     logger.setLevel(args.log_level)
 
     with open('stations.yaml', 'r') as file:
         station_config = yaml.safe_load(file)
 
-    bot = start_bot(None, args.bot_token, station_config, args.bot_backup,
+    bot = start_bot(args.bot_token, station_config, args.bot_backup,
                     args.admin_id)
 
     ecmwf = EcmwfApi(station_config)
@@ -101,13 +99,7 @@ def main():
             ecmwf.cache_plots()
         except Exception as e:
             logger.error(f'An error occured: {e}')
-            logger.error('Restart required')
             sys.exit(1)
-
-        if bot.restart_required():
-            bot = start_bot(bot, args.bot_token, station_config,
-                            args.bot_backup, args.admin_id)
-            logger.info('Bot restarted')
 
         snooze = 5
         logger.debug(f'snooze {snooze}s ...')
