@@ -7,6 +7,7 @@ import sys
 from ecmwf import EcmwfApi
 from bot import PlotBot
 from logger_config import logger
+from db import Database
 
 
 def stop(bot):
@@ -14,10 +15,10 @@ def stop(bot):
     sys.exit(1)
 
 
-def start_bot(bot, token, station_config, backup, admin_id, restart=False):
+def start_bot(bot, token, station_config, backup, admin_id, db, restart=False):
     if restart:
         bot.stop()
-    bot = PlotBot(token, station_config, backup, admin_id)
+    bot = PlotBot(token, station_config, backup, admin_id=admin_id, db=db)
     bot.connect()
     return bot
 
@@ -57,11 +58,14 @@ def main():
     with open('stations.yaml', 'r') as file:
         station_config = yaml.safe_load(file)
 
+    db = Database('config.yml')
+
     bot = start_bot(None,
                     args.bot_token,
                     station_config,
                     args.bot_backup,
                     args.admin_id,
+                    db=db,
                     restart=False)
 
     ecmwf = EcmwfApi(station_config)
@@ -94,9 +98,13 @@ def main():
                             station_config,
                             args.bot_backup,
                             args.admin_id,
+                            db=db,
                             restart=True)
             logger.info('Bot restarted')
 
+        # each day at 00:00 UTC
+        if time.strftime('%H:%M') == '00:00':
+            logger.info(db.get_activity_summary())
         snooze = 5
         logger.debug(f'snooze {snooze}s ...')
         time.sleep(snooze)
