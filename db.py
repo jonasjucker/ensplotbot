@@ -44,6 +44,8 @@ class Database:
                     )
                 """)
             connection.commit()
+        except Exception as e:
+            logger.error(f"{e} while creating tables")
         finally:
             connection.close()
 
@@ -114,6 +116,8 @@ class Database:
             with connection.cursor() as cursor:
                 cursor.execute(sql, values)
                 return cursor.fetchall()
+        except Exception as e:
+            logger.error(f"{e} with SQL: {sql} and values: {values}")
         finally:
             connection.close()
 
@@ -141,6 +145,8 @@ class Database:
             with connection.cursor() as cursor:
                 cursor.execute(sql)
                 return cursor.fetchall()
+        except Exception as e:
+            logger.error(f"{e} with SQL: {sql}")
         finally:
             connection.close()
 
@@ -151,7 +157,6 @@ class Database:
                 cursor.execute(sql, values)
             connection.commit()
         except Exception as e:
-            logger.error(f"Error executing query: {e}")
-            #connection.rollback()
+            logger.error(f"{e} with SQL: {sql} and values: {values}")
         finally:
             connection.close()
