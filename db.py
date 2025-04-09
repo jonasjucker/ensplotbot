@@ -54,13 +54,7 @@ class Database:
             GROUP BY activity_type
             ORDER BY count DESC
         """
-        activity = self._select(sql)
-        summary = []
-        summary.append("\nActivity Summary:")
-        summary.append("---------------")
-        for record in activity:
-            summary.append(f"{record['activity_type']}: {record['count']}")
-        return summary
+        return self._select(sql)
 
     def _select(self, sql):
         connection = self._get_db_connection()
