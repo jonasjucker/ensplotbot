@@ -102,6 +102,9 @@ def main():
                             restart=True)
             logger.info('Bot restarted')
 
+        # each day at 00:00 UTC
+        if time.strftime('%H:%M') == '00:00':
+            db.get_activity_summary()
         snooze = 5
         logger.debug(f'snooze {snooze}s ...')
         time.sleep(snooze)

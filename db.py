@@ -1,6 +1,8 @@
 import yaml
 import psycopg2
+from psycopg2.extras import DictCursor
 from datetime import datetime
+from logger_config import logger
 
 class Database:
     def __init__(self, config_file):
@@ -13,7 +15,8 @@ class Database:
             user=self.config['db']['user'],
             password=self.config['db']['password'],
             dbname=self.config['db']['database'],
-            port=self.config['db']['port']
+            port=self.config['db']['port'],
+            cursor_factory=DictCursor
             )
         return connection
 
@@ -43,6 +46,33 @@ class Database:
         """
         values = (activity_type, user_id, station, datetime.now())
         self._insert(sql, values)
+
+    def get_activity_summary(self):
+        sql = """
+            SELECT activity_type, COUNT(*) AS count
+            FROM activity_log
+            WHERE timestamp >= NOW() - INTERVAL '24 HOURS'
+            GROUP BY activity_type
+            ORDER BY count DESC
+        """
+        activity = self._select(sql)
+        summary = []
+        summary.append("\nActivity Summary:")
+        summary.append("---------------")
+        for record in activity:
+            summary.append(
+                f"{record['activity_type']}: {record['count']}"
+            )
+        return summary
+
+    def _select(self, sql):
+        connection = self._get_db_connection()
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute(sql)
+                return cursor.fetchall()
+        finally:
+            connection.close()
 
     def _insert(self, sql, values):
         connection = self._get_db_connection()
