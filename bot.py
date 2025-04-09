@@ -336,7 +336,7 @@ class PlotBot:
         # remove user to subscription list for given station
         if id in bot_data[station]:
             bot_data[station].remove(id)
-        
+
         self._db.remove_subscription(station, id) if self._db else None
 
     def _cancel(self, update: Update, context: CallbackContext) -> int:

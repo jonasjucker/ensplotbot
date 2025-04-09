@@ -34,7 +34,7 @@ class Database:
                         timestamp TIMESTAMP NOT NULL
                     )
                 """)
-            
+
                 # subscriptions table
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS subscriptions (
@@ -46,7 +46,7 @@ class Database:
             connection.commit()
         finally:
             connection.close()
-        
+
     def _create_tables(self):
         connection = self._get_db_connection()
         try:
@@ -98,7 +98,7 @@ class Database:
             FROM subscriptions
             WHERE user_id = %s
         """
-        return self._select_with_values(sql, (user_id,))
+        return self._select_with_values(sql, (user_id, ))
 
     def get_users_by_station(self, station):
         sql = """
@@ -106,7 +106,7 @@ class Database:
             FROM subscriptions
             WHERE station = %s
         """
-        return self._select_with_values(sql, (station,))
+        return self._select_with_values(sql, (station, ))
 
     def _select_with_values(self, sql, values):
         connection = self._get_db_connection()
