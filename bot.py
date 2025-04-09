@@ -20,8 +20,9 @@ TIMEOUT = 60
 
 class PlotBot:
 
-    def __init__(self, token, station_config, backup, admin_id=None):
+    def __init__(self, token, station_config, backup, db=None, admin_id=None):
 
+        self._db = db
         # Create the Updater and pass it your bot's token.
         persistence = PicklePersistence(
             filename=os.path.join(backup, 'bot.pkl'))
@@ -380,6 +381,12 @@ class PlotBot:
                                         photo=open(plot, 'rb'))
         except:
             logger.warning(f'Could not send plot to user: {user_id}')
+            if self._db:
+                self._db.log_activity(
+                    activity_type="fail-send-plot",
+                    user_id=user_id,
+                    station=station_name,
+                )
 
     def _send_plots(self, plots, requests):
         for station_name, users in requests.items():
@@ -389,6 +396,15 @@ class PlotBot:
     def send_plots_to_new_subscribers(self, plots):
         self._send_plots(plots, self._subscriptions)
         logger.info('plots sent to new subscribers')
+         
+        if self._db:
+            for station, users in self._subscriptions.items():
+                for user_id in users:
+                    self._db.log_activity(
+                        activity_type="subscription",
+                        user_id=user_id,
+                        station=station,
+                    )
 
         self._subscriptions = {
             station: set()
@@ -398,6 +414,15 @@ class PlotBot:
     def send_one_time_forecast(self, plots):
         self._send_plots(plots, self._one_time_forecast_requests)
         logger.info('plots sent to one time forecast requests')
+
+        if self._db:
+            for station, users in self._one_time_forecast_requests.items():
+                for user_id in users:
+                    self._db.log_activity(
+                        activity_type="one-time-request",
+                        user_id=user_id,
+                        station=station,
+                    )
 
         self._one_time_forecast_requests = {
             station: set()

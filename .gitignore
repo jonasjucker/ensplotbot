@@ -4,4 +4,5 @@ __pycache__
 .venv
 BOT_TOKEN
 ADMIN_ID
+config.yml
 
