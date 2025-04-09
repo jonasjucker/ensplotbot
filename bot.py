@@ -67,6 +67,7 @@ class PlotBot:
             self._dp.bot_data.setdefault(station, set())
             for station in self._station_names
         ]
+        self._populate_db()
         self._stop = False
         self._admin_id = admin_id
 
@@ -328,22 +329,15 @@ class PlotBot:
 
         self._subscriptions[station].add(id)
 
+        self._db.add_subscription(station, id) if self._db else None
+
     def _revoke_subscription(self, id, station, bot_data):
 
         # remove user to subscription list for given station
         if id in bot_data[station]:
             bot_data[station].remove(id)
-
-    def _unsubscribe(self, update: Update, context: CallbackContext):
-        reply_text = "You sucessfully unsubscribed."
-        update.message.reply_text(reply_text)
-
-        # remove user from subscription list
-        user_id = update.effective_user.id
-        context.bot_data.setdefault('user_id',
-                                    set())  # create key if not present
-        if user_id in context.bot_data['user_id']:
-            context.bot_data['user_id'].remove(user_id)
+        
+        self._db.remove_subscription(station, id) if self._db else None
 
     def _cancel(self, update: Update, context: CallbackContext) -> int:
         user = update.message.from_user
@@ -428,6 +422,12 @@ class PlotBot:
             station: set()
             for station in self._station_names
         }
+
+    def _populate_db(self):
+        # populate db with all subscriptions
+        for station, users in self._dp.bot_data.items():
+            for user_id in users:
+                self._db.add_subscription(station, user_id)
 
     def _collect_bot_data(self, short=False):
         stats = []
