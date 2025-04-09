@@ -396,7 +396,7 @@ class PlotBot:
     def send_plots_to_new_subscribers(self, plots):
         self._send_plots(plots, self._subscriptions)
         logger.info('plots sent to new subscribers')
-         
+
         if self._db:
             for station, users in self._subscriptions.items():
                 for user_id in users:

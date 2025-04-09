@@ -4,20 +4,20 @@ from psycopg2.extras import DictCursor
 from datetime import datetime
 from logger_config import logger
 
+
 class Database:
+
     def __init__(self, config_file):
         self.config = yaml.safe_load(open(config_file))
         self._create_tables()
 
     def _get_db_connection(self):
-        connection = psycopg2.connect(
-            host=self.config['db']['host'],
-            user=self.config['db']['user'],
-            password=self.config['db']['password'],
-            dbname=self.config['db']['database'],
-            port=self.config['db']['port'],
-            cursor_factory=DictCursor
-            )
+        connection = psycopg2.connect(host=self.config['db']['host'],
+                                      user=self.config['db']['user'],
+                                      password=self.config['db']['password'],
+                                      dbname=self.config['db']['database'],
+                                      port=self.config['db']['port'],
+                                      cursor_factory=DictCursor)
         return connection
 
     def _create_tables(self):
@@ -37,7 +37,6 @@ class Database:
             connection.commit()
         finally:
             connection.close()
-
 
     def log_activity(self, activity_type, user_id, station):
         sql = """
@@ -60,9 +59,7 @@ class Database:
         summary.append("\nActivity Summary:")
         summary.append("---------------")
         for record in activity:
-            summary.append(
-                f"{record['activity_type']}: {record['count']}"
-            )
+            summary.append(f"{record['activity_type']}: {record['count']}")
         return summary
 
     def _select(self, sql):
