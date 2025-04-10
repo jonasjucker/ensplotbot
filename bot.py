@@ -178,10 +178,23 @@ class PlotBot:
         update.message.reply_markdown(greetings)
 
     def _get_subscriptions_of_user(self, user_id, context) -> list[str]:
-        return [
+        from_pickle = sorted([
             station for station, users in context.bot_data.items()
             if user_id in users
-        ]
+        ])
+        if self._db:
+            # Get the subscriptions from the database
+            from_db = self._db.get_subscriptions_by_user(user_id)
+        else:
+            logger.info(
+                "No database connection, using subscriptions from pickle only")
+            from_db = from_pickle
+        if from_db != from_pickle:
+            logger.warning(
+                f"Subscriptions from pickle and db do not match: {from_pickle} != {from_db}"
+            )
+        return from_pickle
+
 
     def _choose_station(self, update: Update, context: CallbackContext) -> int:
         region = update.message.text
@@ -432,13 +445,21 @@ class PlotBot:
     def _collect_bot_data(self, short=False):
         stats = []
         stats.append('')
-        for station, users in self._dp.bot_data.items():
+
+        if self._db:
             if not short:
-                stats.append(f'{station}: {len(users)}')
-        unique_users = set()
-        for users in self._dp.bot_data.values():
-            unique_users.update(users)
-        stats.append(f'Total subscribers: {len(unique_users)}')
+                # Fetch all subscriptions grouped by station
+                subscriptions = self._db.get_subscriptions_grouped_by_station()
+
+                for station, count in subscriptions.items():
+                        stats.append(f'{station}: {count}')
+
+            # Fetch the total number of unique users
+            total_users = self._db.get_total_unique_users()
+            stats.append(f'Total subscribers: {total_users}')
+        else:
+            stats.append("No database connection available.")
+
         stats_str = "\n".join(stats)
         return stats_str
 
