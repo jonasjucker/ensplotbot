@@ -116,14 +116,14 @@ class Database:
             return {row[0]: row[1] for row in results}
         else:
             return {}
-    
+
     def _get_total_unique_users(self):
         sql = """
             SELECT COUNT(DISTINCT user_id) AS unique_users
             FROM subscriptions
         """
         return self._select(sql)
-    
+
     def get_total_unique_users(self):
         result = self._get_total_unique_users()
         if result:
@@ -134,7 +134,8 @@ class Database:
     def get_subscriptions_by_user(self, user_id) -> list[str]:
         subscriptions = self._get_subscriptions_by_user(user_id)
         if subscriptions:
-            return sorted([subscription['station'] for subscription in subscriptions])
+            return sorted(
+                [subscription['station'] for subscription in subscriptions])
         else:
             return []
 

@@ -195,7 +195,6 @@ class PlotBot:
             )
         return from_pickle
 
-
     def _choose_station(self, update: Update, context: CallbackContext) -> int:
         region = update.message.text
         station_of_region = self._get_station_names_for_region(region)
@@ -452,7 +451,7 @@ class PlotBot:
                 subscriptions = self._db.get_subscriptions_grouped_by_station()
 
                 for station, count in subscriptions.items():
-                        stats.append(f'{station}: {count}')
+                    stats.append(f'{station}: {count}')
 
             # Fetch the total number of unique users
             total_users = self._db.get_total_unique_users()
