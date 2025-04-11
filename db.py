@@ -102,35 +102,6 @@ class Database:
         """
         return self._select_with_values(sql, (user_id, ))
 
-    def _get_subscriptions_grouped_by_station(self):
-        sql = """
-            SELECT station, COUNT(user_id) AS user_count
-            FROM subscriptions
-            GROUP BY station
-        """
-        return self._select(sql)
-
-    def get_subscriptions_grouped_by_station(self):
-        results = self._get_subscriptions_grouped_by_station()
-        if results:
-            return {row[0]: row[1] for row in results}
-        else:
-            return {}
-
-    def _get_total_unique_users(self):
-        sql = """
-            SELECT COUNT(DISTINCT user_id) AS unique_users
-            FROM subscriptions
-        """
-        return self._select(sql)
-
-    def get_total_unique_users(self):
-        result = self._get_total_unique_users()
-        if result:
-            return result[0]['unique_users']
-        else:
-            return 0
-
     def get_subscriptions_by_user(self, user_id) -> list[str]:
         subscriptions = self._get_subscriptions_by_user(user_id)
         if subscriptions:

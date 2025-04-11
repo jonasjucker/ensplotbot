@@ -130,8 +130,6 @@ class PlotBot:
         self._dp.add_handler(one_time_forecast_handler)
         self._dp.add_error_handler(self._error)
 
-        logger.info(self._collect_bot_data(short=True))
-
     def connect(self):
         self.updater.start_polling()
 
@@ -295,12 +293,6 @@ class PlotBot:
 
         return ConversationHandler.END
 
-    def _log_stats_and_send_to_admin(self):
-        stats = self._collect_bot_data()
-        logger.info(stats)
-        if self._admin_id:
-            self._dp.bot.send_message(chat_id=self._admin_id, text=stats)
-
     def _subscribe_for_station(self, update: Update,
                                context: CallbackContext) -> int:
         user = update.message.from_user
@@ -313,8 +305,6 @@ class PlotBot:
         self._register_subscription(user.id, msg_text, context.bot_data)
 
         logger.info(f' {user.first_name} subscribed for Station {msg_text}')
-
-        self._log_stats_and_send_to_admin()
 
         return ConversationHandler.END
 
@@ -441,26 +431,6 @@ class PlotBot:
             for user_id in users:
                 self._db.add_subscription(station, user_id)
 
-    def _collect_bot_data(self, short=False):
-        stats = []
-        stats.append('')
-
-        if self._db:
-            if not short:
-                # Fetch all subscriptions grouped by station
-                subscriptions = self._db.get_subscriptions_grouped_by_station()
-
-                for station, count in subscriptions.items():
-                    stats.append(f'{station}: {count}')
-
-            # Fetch the total number of unique users
-            total_users = self._db.get_total_unique_users()
-            stats.append(f'Total subscribers: {total_users}')
-        else:
-            stats.append("No database connection available.")
-
-        stats_str = "\n".join(stats)
-        return stats_str
 
     def stations_with_subscribers(self):
         return sorted(

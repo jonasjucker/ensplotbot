@@ -60,24 +60,6 @@ def test_stations_of_new_subscribers(bot):
     assert bot.stations_of_new_subscribers() == ['Zürich', 'Basel', 'Bern']
 
 
-def test_collect_bot_data_short(bot):
-    bot._register_subscription(123, 'Bern', bot._dp.bot_data)
-    assert bot._collect_bot_data(short=True) == '\nTotal subscribers: 1'
-    bot._register_subscription(124, 'Bern', bot._dp.bot_data)
-    assert bot._collect_bot_data(short=True) == '\nTotal subscribers: 2'
-
-
-def test_collect_bot_data(bot):
-    bot._register_subscription(123, 'Bern', bot._dp.bot_data)
-    assert bot._collect_bot_data(
-        short=False) == '\nZürich: 0\nBasel: 0\nBern: 1\nTotal subscribers: 1'
-    bot._register_subscription(124, 'Bern', bot._dp.bot_data)
-    assert bot._collect_bot_data(
-        short=False) == '\nZürich: 0\nBasel: 0\nBern: 2\nTotal subscribers: 2'
-    bot._register_subscription(129, 'Zürich', bot._dp.bot_data)
-    assert bot._collect_bot_data(
-        short=False) == '\nZürich: 1\nBasel: 0\nBern: 2\nTotal subscribers: 3'
-
 
 def test_revoke_subscription(bot):
     id1 = 123
