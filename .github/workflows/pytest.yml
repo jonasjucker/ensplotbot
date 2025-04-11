@@ -22,6 +22,12 @@ jobs:
         pip install -r requirements.txt
 
     - name: Run tests
+      env:
+        DB_HOST: ${{ secrets.DB_HOST }}
+        DB_PORT: ${{ secrets.DB_PORT }}
+        DB_NAME: ${{ secrets.DB_NAME }}
+        DB_USER: ${{ secrets.DB_USER }}
+        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
       run: |
         pytest -n auto -vv --cov --cov-report=term test/*
     
