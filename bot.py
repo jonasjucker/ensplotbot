@@ -67,6 +67,7 @@ class PlotBot:
             self._dp.bot_data.setdefault(station, set())
             for station in self._station_names
         ]
+        self._populate_db()
         self._stop = False
         self._admin_id = admin_id
 
@@ -177,10 +178,22 @@ class PlotBot:
         update.message.reply_markdown(greetings)
 
     def _get_subscriptions_of_user(self, user_id, context) -> list[str]:
-        return [
+        from_pickle = sorted([
             station for station, users in context.bot_data.items()
             if user_id in users
-        ]
+        ])
+        if self._db:
+            # Get the subscriptions from the database
+            from_db = self._db.get_subscriptions_by_user(user_id)
+        else:
+            logger.info(
+                "No database connection, using subscriptions from pickle only")
+            from_db = from_pickle
+        if from_db != from_pickle:
+            logger.warning(
+                f"Subscriptions from pickle and db do not match: {from_pickle} != {from_db}"
+            )
+        return from_pickle
 
     def _choose_station(self, update: Update, context: CallbackContext) -> int:
         region = update.message.text
@@ -328,22 +341,15 @@ class PlotBot:
 
         self._subscriptions[station].add(id)
 
+        self._db.add_subscription(station, id) if self._db else None
+
     def _revoke_subscription(self, id, station, bot_data):
 
         # remove user to subscription list for given station
         if id in bot_data[station]:
             bot_data[station].remove(id)
 
-    def _unsubscribe(self, update: Update, context: CallbackContext):
-        reply_text = "You sucessfully unsubscribed."
-        update.message.reply_text(reply_text)
-
-        # remove user from subscription list
-        user_id = update.effective_user.id
-        context.bot_data.setdefault('user_id',
-                                    set())  # create key if not present
-        if user_id in context.bot_data['user_id']:
-            context.bot_data['user_id'].remove(user_id)
+        self._db.remove_subscription(station, id) if self._db else None
 
     def _cancel(self, update: Update, context: CallbackContext) -> int:
         user = update.message.from_user
@@ -429,16 +435,30 @@ class PlotBot:
             for station in self._station_names
         }
 
+    def _populate_db(self):
+        # populate db with all subscriptions
+        for station, users in self._dp.bot_data.items():
+            for user_id in users:
+                self._db.add_subscription(station, user_id)
+
     def _collect_bot_data(self, short=False):
         stats = []
         stats.append('')
-        for station, users in self._dp.bot_data.items():
+
+        if self._db:
             if not short:
-                stats.append(f'{station}: {len(users)}')
-        unique_users = set()
-        for users in self._dp.bot_data.values():
-            unique_users.update(users)
-        stats.append(f'Total subscribers: {len(unique_users)}')
+                # Fetch all subscriptions grouped by station
+                subscriptions = self._db.get_subscriptions_grouped_by_station()
+
+                for station, count in subscriptions.items():
+                    stats.append(f'{station}: {count}')
+
+            # Fetch the total number of unique users
+            total_users = self._db.get_total_unique_users()
+            stats.append(f'Total subscribers: {total_users}')
+        else:
+            stats.append("No database connection available.")
+
         stats_str = "\n".join(stats)
         return stats_str
 

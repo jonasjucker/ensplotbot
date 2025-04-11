@@ -34,7 +34,127 @@ class Database:
                         timestamp TIMESTAMP NOT NULL
                     )
                 """)
+
+                # subscriptions table
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS subscriptions (
+                        id SERIAL PRIMARY KEY,
+                        station TEXT NOT NULL,
+                        user_id VARCHAR(50) NOT NULL
+                    )
+                """)
             connection.commit()
+        except Exception as e:
+            logger.error(f"{e} while creating tables")
+        finally:
+            connection.close()
+
+    def _create_tables(self):
+        connection = self._get_db_connection()
+        try:
+            with connection.cursor() as cursor:
+                # activity_log table
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS activity_log (
+                        id SERIAL PRIMARY KEY,
+                        activity_type VARCHAR(50) NOT NULL,
+                        user_id VARCHAR(50) NOT NULL,
+                        station TEXT,
+                        timestamp TIMESTAMP NOT NULL
+                    )
+                """)
+
+                # subscriptions table
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS subscriptions (
+                        id SERIAL PRIMARY KEY,
+                        station TEXT NOT NULL,
+                        user_id BIGINT NOT NULL,
+                        UNIQUE (station, user_id)
+                    )
+                """)
+            connection.commit()
+        finally:
+            connection.close()
+
+    def add_subscription(self, station, user_id):
+        sql = """
+            INSERT INTO subscriptions (station, user_id)
+            VALUES (%s, %s)
+            ON CONFLICT (station, user_id) DO NOTHING
+        """
+        values = (station, user_id)
+        self._execute_query_with_value(sql, values)
+
+    def remove_subscription(self, station, user_id):
+        sql = """
+            DELETE FROM subscriptions
+            WHERE station = %s AND user_id = %s
+        """
+        values = (station, user_id)
+        self._execute_query_with_value(sql, values)
+
+    def _get_subscriptions_by_user(self, user_id):
+        sql = """
+            SELECT station
+            FROM subscriptions
+            WHERE user_id = %s
+        """
+        return self._select_with_values(sql, (user_id, ))
+
+    def _get_subscriptions_grouped_by_station(self):
+        sql = """
+            SELECT station, COUNT(user_id) AS user_count
+            FROM subscriptions
+            GROUP BY station
+        """
+        return self._select(sql)
+
+    def get_subscriptions_grouped_by_station(self):
+        results = self._get_subscriptions_grouped_by_station()
+        if results:
+            return {row[0]: row[1] for row in results}
+        else:
+            return {}
+
+    def _get_total_unique_users(self):
+        sql = """
+            SELECT COUNT(DISTINCT user_id) AS unique_users
+            FROM subscriptions
+        """
+        return self._select(sql)
+
+    def get_total_unique_users(self):
+        result = self._get_total_unique_users()
+        if result:
+            return result[0]['unique_users']
+        else:
+            return 0
+
+    def get_subscriptions_by_user(self, user_id) -> list[str]:
+        subscriptions = self._get_subscriptions_by_user(user_id)
+        if subscriptions:
+            return sorted(
+                [subscription['station'] for subscription in subscriptions])
+        else:
+            return []
+
+    def get_users_by_station(self, station):
+        sql = """
+            SELECT user_id
+            FROM subscriptions
+            WHERE station = %s
+        """
+        return self._select_with_values(sql, (station, ))
+
+    def _select_with_values(self, sql, values):
+        connection = self._get_db_connection()
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute(sql, values)
+                return cursor.fetchall()
+        except Exception as e:
+            logger.error(f"{e} with SQL: {sql} and values: {values}")
         finally:
             connection.close()
 
@@ -44,7 +164,7 @@ class Database:
             VALUES (%s, %s, %s, %s)
         """
         values = (activity_type, user_id, station, datetime.now())
-        self._insert(sql, values)
+        self._execute_query_with_value(sql, values)
 
     def get_activity_summary(self):
         sql = """
@@ -62,14 +182,18 @@ class Database:
             with connection.cursor() as cursor:
                 cursor.execute(sql)
                 return cursor.fetchall()
+        except Exception as e:
+            logger.error(f"{e} with SQL: {sql}")
         finally:
             connection.close()
 
-    def _insert(self, sql, values):
+    def _execute_query_with_value(self, sql, values):
         connection = self._get_db_connection()
         try:
             with connection.cursor() as cursor:
                 cursor.execute(sql, values)
             connection.commit()
+        except Exception as e:
+            logger.error(f"{e} with SQL: {sql} and values: {values}")
         finally:
             connection.close()
