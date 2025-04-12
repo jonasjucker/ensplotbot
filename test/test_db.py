@@ -49,6 +49,8 @@ def test_add_subscription(db_instance):
 
 def test_remove_subscription(db_instance):
     db_instance.add_subscription("station1", 12345)
+    result = db_instance.get_subscriptions_by_user(12345)
+    assert result == ["station1"]
     db_instance.remove_subscription("station1", 12345)
     result = db_instance.get_subscriptions_by_user(12345)
     assert result == []
