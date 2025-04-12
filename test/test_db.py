@@ -67,3 +67,28 @@ def test_log_activity(db_instance):
     result = db_instance.get_activity_summary()
     assert result[0]["activity_type"] == "login"
     assert result[0]["count"] == 1
+
+def test_stations_with_subscribers(db_instance):
+    # Add test data
+    db_instance.add_subscription("station1", 12345)
+    db_instance.add_subscription("station2", 67890)
+    db_instance.add_subscription("station1", 54321)
+
+    stations = db_instance.stations_with_subscribers()
+
+    # Assert the result
+    assert stations == ["station1", "station2"]
+
+def test_get_subscriptions_by_station(db_instance):
+    # Add test data
+    db_instance.add_subscription("station1", 12345)
+    db_instance.add_subscription("station1", 67890)
+    db_instance.add_subscription("station2", 54321)
+
+    users = db_instance.get_subscriptions_by_station("station1")
+
+    assert users == [12345, 67890]
+
+    # Test for a station with no subscriptions
+    users = db_instance.get_subscriptions_by_station("station3")
+    assert users == []

@@ -94,19 +94,37 @@ class Database:
         values = (station, user_id)
         self._execute_query_with_value(sql, values)
 
-    def _get_subscriptions_by_user(self, user_id):
+    def get_subscriptions_by_user(self, user_id) -> list[str]:
         sql = f"""
             SELECT station
             FROM subscriptions_{self._table_suffix}
             WHERE user_id = %s
         """
-        return self._select_with_values(sql, (user_id, ))
-
-    def get_subscriptions_by_user(self, user_id) -> list[str]:
-        subscriptions = self._get_subscriptions_by_user(user_id)
+        subscriptions = self._select_with_values(sql, (user_id, ))
         if subscriptions:
             return sorted(
                 [subscription['station'] for subscription in subscriptions])
+        else:
+            return []
+        
+    def stations_with_subscribers(self):
+        sql = f"""
+            SELECT DISTINCT station
+            FROM subscriptions_{self._table_suffix}
+        """
+        stations = self._select(sql)
+        return sorted([station['station'] for station in stations])
+
+    def get_subscriptions_by_station(self, station) -> list[int]:
+        sql = f"""
+            SELECT user_id
+            FROM subscriptions_{self._table_suffix}
+            WHERE station = %s
+        """
+        subscriptions = self._select_with_values(sql, (station, ))
+        if subscriptions:
+            return sorted(
+                [subscription['user_id'] for subscription in subscriptions])
         else:
             return []
 
