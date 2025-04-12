@@ -15,10 +15,10 @@ def stop(bot):
     sys.exit(1)
 
 
-def start_bot(bot, token, station_config, backup, admin_id, db, restart=False):
+def start_bot(bot, token, station_config, admin_id, db, restart=False):
     if restart:
         bot.stop()
-    bot = PlotBot(token, station_config, backup, admin_id=admin_id, db=db)
+    bot = PlotBot(token, station_config, admin_id=admin_id, db=db)
     bot.connect()
     return bot
 
@@ -31,11 +31,6 @@ def main():
                         dest='bot_token', \
                         type=str, \
                         help='unique token of bot (KEEP PRIVATE!)')
-    parser.add_argument('--bot_backup',
-                        dest='bot_backup', \
-                        type=str, \
-                        default='backup',
-                        help='Backup folder for the bot')
 
     parser.add_argument('--admin_id',
                         dest='admin_id', \
@@ -63,7 +58,6 @@ def main():
     bot = start_bot(None,
                     args.bot_token,
                     station_config,
-                    args.bot_backup,
                     args.admin_id,
                     db=db,
                     restart=False)
@@ -96,7 +90,6 @@ def main():
             bot = start_bot(bot,
                             args.bot_token,
                             station_config,
-                            args.bot_backup,
                             args.admin_id,
                             db=db,
                             restart=True)

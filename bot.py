@@ -7,7 +7,6 @@ from telegram.ext import (
     Filters,
     ConversationHandler,
     Updater,
-    PicklePersistence,
     CallbackContext,
 )
 
@@ -20,13 +19,9 @@ TIMEOUT = 60
 
 class PlotBot:
 
-    def __init__(self, token, station_config, backup, db=None, admin_id=None):
+    def __init__(self, token, station_config, db=None, admin_id=None):
 
         self._db = db
-        self._use_pickle = True
-        # Create the Updater and pass it your bot's token.
-        persistence = PicklePersistence(
-            filename=os.path.join(backup, 'bot.pkl'))
         self._station_names = [station["name"] for station in station_config]
         self._region_of_stations = {
             station["name"]: station["region"]
@@ -61,15 +56,8 @@ class PlotBot:
         # inverse of all filters above
         self._filter_meaningful_messages = ~self._filter_all_commands & ~self._filter_regions & ~self._filter_stations
 
-        self.updater = Updater(token, persistence=persistence)
+        self.updater = Updater(token)
         self._dp = self.updater.dispatcher
-        # initialize bot_data with empty set for each station if not present
-        [
-            self._dp.bot_data.setdefault(station, set())
-            for station in self._station_names
-        ]
-        if self._use_pickle:
-            self._populate_db()
         self._stop = False
         self._admin_id = admin_id
 
@@ -381,12 +369,6 @@ class PlotBot:
             station: set()
             for station in self._station_names
         }
-
-    def _populate_db(self):
-        # populate db with all subscriptions
-        for station, users in self._dp.bot_data.items():
-            for user_id in users:
-                self._db.add_subscription(station, user_id)
 
     def broadcast(self, plots):
         if plots:

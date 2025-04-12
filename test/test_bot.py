@@ -13,7 +13,7 @@ from bot import PlotBot
 def bot(station_config):
     from bot import PlotBot
     token = '9999999999:BBBBBBBRBBBBBBBBBBBBBBBBBBBBBBBBBBB'
-    return PlotBot(token, station_config, 'test/backup')
+    return PlotBot(token, station_config)
 
 
 @pytest.fixture
