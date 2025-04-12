@@ -68,6 +68,7 @@ def test_log_activity(db_instance):
     assert result[0]["activity_type"] == "login"
     assert result[0]["count"] == 1
 
+
 def test_stations_with_subscribers(db_instance):
     # Add test data
     db_instance.add_subscription("station1", 12345)
@@ -78,6 +79,7 @@ def test_stations_with_subscribers(db_instance):
 
     # Assert the result
     assert stations == ["station1", "station2"]
+
 
 def test_get_subscriptions_by_station(db_instance):
     # Add test data

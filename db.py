@@ -106,7 +106,7 @@ class Database:
                 [subscription['station'] for subscription in subscriptions])
         else:
             return []
-        
+
     def stations_with_subscribers(self):
         sql = f"""
             SELECT DISTINCT station

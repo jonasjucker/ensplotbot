@@ -36,6 +36,7 @@ def station_config():
     """
     return yaml.safe_load(stations)
 
+
 def test_available_locations(bot):
     assert bot._available_locations() == [
         '_Available locations_', '', '*Basilea*', '- Basel', '',

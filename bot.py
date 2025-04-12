@@ -200,8 +200,8 @@ class PlotBot:
 
         entry_point = update.message.text
 
-        self._send_region_keyboard(update,
-                                   sorted([name for name in self._station_regions]))
+        self._send_region_keyboard(
+            update, sorted([name for name in self._station_regions]))
 
         # check that entry point is valid
         if entry_point == '/subscribe':
@@ -391,6 +391,7 @@ class PlotBot:
     def broadcast(self, plots):
         if plots:
             for station_name in plots:
-                for user_id in self._db.get_subscriptions_by_station(station_name):
+                for user_id in self._db.get_subscriptions_by_station(
+                        station_name):
                     self._send_plot_to_user(plots, station_name, user_id)
             logger.info('plots sent to all users')
