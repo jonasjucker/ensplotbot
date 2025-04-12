@@ -23,6 +23,7 @@ class PlotBot:
     def __init__(self, token, station_config, backup, db=None, admin_id=None):
 
         self._db = db
+        self._use_pickle = True
         # Create the Updater and pass it your bot's token.
         persistence = PicklePersistence(
             filename=os.path.join(backup, 'bot.pkl'))
@@ -67,6 +68,8 @@ class PlotBot:
             self._dp.bot_data.setdefault(station, set())
             for station in self._station_names
         ]
+        if self._use_pickle:
+            self._populate_db()
         self._stop = False
         self._admin_id = admin_id
 
@@ -129,8 +132,6 @@ class PlotBot:
         self._dp.add_handler(one_time_forecast_handler)
         self._dp.add_error_handler(self._error)
 
-        logger.info(self._collect_bot_data(short=True))
-
     def connect(self):
         self.updater.start_polling()
 
@@ -176,12 +177,6 @@ class PlotBot:
 
         update.message.reply_markdown(greetings)
 
-    def _get_subscriptions_of_user(self, user_id, context) -> list[str]:
-        return [
-            station for station, users in context.bot_data.items()
-            if user_id in users
-        ]
-
     def _choose_station(self, update: Update, context: CallbackContext) -> int:
         region = update.message.text
         station_of_region = self._get_station_names_for_region(region)
@@ -189,7 +184,7 @@ class PlotBot:
         user_id = update.message.chat_id
 
         # Get the stations that the user has already subscribed to
-        subscribed_stations = self._get_subscriptions_of_user(user_id, context)
+        subscribed_stations = self._db.get_subscriptions_by_user(user_id)
 
         # Only include stations that the user has not already subscribed to
         not_subscribed_for_all_stations = self._send_station_keyboard(
@@ -205,8 +200,8 @@ class PlotBot:
 
         entry_point = update.message.text
 
-        self._send_region_keyboard(update,
-                                   [name for name in self._station_regions])
+        self._send_region_keyboard(
+            update, sorted([name for name in self._station_regions]))
 
         # check that entry point is valid
         if entry_point == '/subscribe':
@@ -235,7 +230,7 @@ class PlotBot:
         user_id = update.message.chat_id
 
         # Get the stations that the user has already subscribed to
-        subscribed_stations = self._get_subscriptions_of_user(user_id, context)
+        subscribed_stations = self._db.get_subscriptions_by_user(user_id)
 
         # Only include stations that the user has already subscribed to
         subscription_present = self._send_station_keyboard(
@@ -272,21 +267,16 @@ class PlotBot:
                                  context: CallbackContext) -> int:
         user = update.message.from_user
         msg_text = update.message.text
+        self._db.remove_subscription(msg_text, user.id)
+
         reply_text = f'Unubscribed for Station {msg_text}'
         update.message.reply_text(
             reply_text,
             reply_markup=ReplyKeyboardRemove(),
         )
-        self._revoke_subscription(user.id, msg_text, context.bot_data)
         logger.info(f' {user.first_name} unsubscribed for Station {msg_text}')
 
         return ConversationHandler.END
-
-    def _log_stats_and_send_to_admin(self):
-        stats = self._collect_bot_data()
-        logger.info(stats)
-        if self._admin_id:
-            self._dp.bot.send_message(chat_id=self._admin_id, text=stats)
 
     def _subscribe_for_station(self, update: Update,
                                context: CallbackContext) -> int:
@@ -297,11 +287,16 @@ class PlotBot:
             reply_text,
             reply_markup=ReplyKeyboardRemove(),
         )
-        self._register_subscription(user.id, msg_text, context.bot_data)
+        self._db.add_subscription(msg_text, user.id)
+        self._subscriptions[msg_text].add(user.id)
 
         logger.info(f' {user.first_name} subscribed for Station {msg_text}')
 
-        self._log_stats_and_send_to_admin()
+        self._db.log_activity(
+            activity_type="subscription",
+            user_id=user.id,
+            station=msg_text,
+        )
 
         return ConversationHandler.END
 
@@ -319,31 +314,13 @@ class PlotBot:
         logger.info(
             f' {user.first_name} requested forecast for Station {msg_text}')
 
+        self._db.log_activity(
+            activity_type="one-time-request",
+            user_id=user.id,
+            station=msg_text,
+        )
+
         return ConversationHandler.END
-
-    def _register_subscription(self, id, station, bot_data):
-
-        # add user to subscription list for given station
-        bot_data[station].add(id)
-
-        self._subscriptions[station].add(id)
-
-    def _revoke_subscription(self, id, station, bot_data):
-
-        # remove user to subscription list for given station
-        if id in bot_data[station]:
-            bot_data[station].remove(id)
-
-    def _unsubscribe(self, update: Update, context: CallbackContext):
-        reply_text = "You sucessfully unsubscribed."
-        update.message.reply_text(reply_text)
-
-        # remove user from subscription list
-        user_id = update.effective_user.id
-        context.bot_data.setdefault('user_id',
-                                    set())  # create key if not present
-        if user_id in context.bot_data['user_id']:
-            context.bot_data['user_id'].remove(user_id)
 
     def _cancel(self, update: Update, context: CallbackContext) -> int:
         user = update.message.from_user
@@ -381,12 +358,6 @@ class PlotBot:
                                         photo=open(plot, 'rb'))
         except:
             logger.warning(f'Could not send plot to user: {user_id}')
-            if self._db:
-                self._db.log_activity(
-                    activity_type="fail-send-plot",
-                    user_id=user_id,
-                    station=station_name,
-                )
 
     def _send_plots(self, plots, requests):
         for station_name, users in requests.items():
@@ -397,15 +368,6 @@ class PlotBot:
         self._send_plots(plots, self._subscriptions)
         logger.info('plots sent to new subscribers')
 
-        if self._db:
-            for station, users in self._subscriptions.items():
-                for user_id in users:
-                    self._db.log_activity(
-                        activity_type="subscription",
-                        user_id=user_id,
-                        station=station,
-                    )
-
         self._subscriptions = {
             station: set()
             for station in self._station_names
@@ -415,40 +377,21 @@ class PlotBot:
         self._send_plots(plots, self._one_time_forecast_requests)
         logger.info('plots sent to one time forecast requests')
 
-        if self._db:
-            for station, users in self._one_time_forecast_requests.items():
-                for user_id in users:
-                    self._db.log_activity(
-                        activity_type="one-time-request",
-                        user_id=user_id,
-                        station=station,
-                    )
-
         self._one_time_forecast_requests = {
             station: set()
             for station in self._station_names
         }
 
-    def _collect_bot_data(self, short=False):
-        stats = []
-        stats.append('')
+    def _populate_db(self):
+        # populate db with all subscriptions
         for station, users in self._dp.bot_data.items():
-            if not short:
-                stats.append(f'{station}: {len(users)}')
-        unique_users = set()
-        for users in self._dp.bot_data.values():
-            unique_users.update(users)
-        stats.append(f'Total subscribers: {len(unique_users)}')
-        stats_str = "\n".join(stats)
-        return stats_str
-
-    def stations_with_subscribers(self):
-        return sorted(
-            [station for station, users in self._dp.bot_data.items() if users])
+            for user_id in users:
+                self._db.add_subscription(station, user_id)
 
     def broadcast(self, plots):
         if plots:
             for station_name in plots:
-                for user_id in self._dp.bot_data.get(station_name, set()):
+                for user_id in self._db.get_subscriptions_by_station(
+                        station_name):
                     self._send_plot_to_user(plots, station_name, user_id)
             logger.info('plots sent to all users')

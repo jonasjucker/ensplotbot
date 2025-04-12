@@ -6,6 +6,20 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
 
     steps:
     - name: Checkout repository
@@ -22,8 +36,14 @@ jobs:
         pip install -r requirements.txt
 
     - name: Run tests
+      env:
+        DB_HOST: localhost
+        DB_PASSWORD: test_password
+        DB_DATABASE: test_db
+        DB_USER: test_user
+        DB_PORT: 5432
       run: |
-        pytest -n auto -vv --cov --cov-report=term test/*
+        pytest -vv --cov --cov-report=term test/*
     
     - name: Deploy
         # Only run this step if the branch is main

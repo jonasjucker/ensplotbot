@@ -5,4 +5,5 @@ __pycache__
 BOT_TOKEN
 ADMIN_ID
 config.yml
+.coverage
 

@@ -85,7 +85,7 @@ def main():
                 bot.send_one_time_forecast(
                     ecmwf.download_plots(bot.stations_of_one_time_request()))
             bot.broadcast(
-                ecmwf.download_latest_plots(bot.stations_with_subscribers()))
+                ecmwf.download_latest_plots(db.stations_with_subscribers()))
             ecmwf.cache_plots()
         except Exception as e:
             logger.error(f'An error occured: {e}')
