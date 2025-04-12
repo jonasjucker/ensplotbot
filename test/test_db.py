@@ -10,8 +10,6 @@ from db import Database
 
 @pytest.fixture(scope="module")
 def db_instance():
-    # Use the real configuration file for the test database
-
     config_file = "config.yml"
     if not os.path.exists(config_file):
         config = {
