@@ -60,7 +60,6 @@ def test_stations_of_new_subscribers(bot):
     assert bot.stations_of_new_subscribers() == ['Zürich', 'Basel', 'Bern']
 
 
-
 def test_revoke_subscription(bot):
     id1 = 123
     id2 = 234

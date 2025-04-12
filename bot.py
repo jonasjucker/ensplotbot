@@ -431,7 +431,6 @@ class PlotBot:
             for user_id in users:
                 self._db.add_subscription(station, user_id)
 
-
     def stations_with_subscribers(self):
         return sorted(
             [station for station, users in self._dp.bot_data.items() if users])

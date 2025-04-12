@@ -9,7 +9,8 @@ class Database:
 
     def __init__(self, config_file, table_suffix=None):
         self.config = yaml.safe_load(open(config_file))
-        self._table_suffix = self.config['db']['table_suffix'] if table_suffix is None else 'test'
+        self._table_suffix = self.config['db'][
+            'table_suffix'] if table_suffix is None else 'test'
         self._create_tables()
 
     def _get_db_connection(self):

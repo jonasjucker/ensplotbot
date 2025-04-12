@@ -7,10 +7,11 @@ import yaml
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from db import Database
 
+
 @pytest.fixture(scope="module")
 def db_instance():
     # Use the real configuration file for the test database
-    
+
     config_file = "config.yml"
     if not os.path.exists(config_file):
         config = {
@@ -29,15 +30,21 @@ def db_instance():
     db = Database(config_file, table_suffix="test")
     yield db
 
+
 @pytest.fixture(scope="function", autouse=True)
 def setup_and_teardown(db_instance):
     # Clear the test tables before each test
-    db_instance._execute_query_with_value(f"DELETE FROM activity_{db_instance._table_suffix}", ())
-    db_instance._execute_query_with_value(f"DELETE FROM subscriptions_{db_instance._table_suffix}", ())
+    db_instance._execute_query_with_value(
+        f"DELETE FROM activity_{db_instance._table_suffix}", ())
+    db_instance._execute_query_with_value(
+        f"DELETE FROM subscriptions_{db_instance._table_suffix}", ())
     yield
     # Clear the test tables after each test
-    db_instance._execute_query_with_value(f"DELETE FROM activity_{db_instance._table_suffix}", ())
-    db_instance._execute_query_with_value(f"DELETE FROM subscriptions_{db_instance._table_suffix}", ())
+    db_instance._execute_query_with_value(
+        f"DELETE FROM activity_{db_instance._table_suffix}", ())
+    db_instance._execute_query_with_value(
+        f"DELETE FROM subscriptions_{db_instance._table_suffix}", ())
+
 
 def test_add_subscription(db_instance):
     db_instance.add_subscription("station1", 12345)
@@ -47,6 +54,7 @@ def test_add_subscription(db_instance):
     result = db_instance.get_subscriptions_by_user(12345)
     assert result == ["station1", "station3"]
 
+
 def test_remove_subscription(db_instance):
     db_instance.add_subscription("station1", 12345)
     result = db_instance.get_subscriptions_by_user(12345)
@@ -54,6 +62,7 @@ def test_remove_subscription(db_instance):
     db_instance.remove_subscription("station1", 12345)
     result = db_instance.get_subscriptions_by_user(12345)
     assert result == []
+
 
 def test_log_activity(db_instance):
     db_instance.log_activity("login", 12345, "station1")
