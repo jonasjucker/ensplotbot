@@ -94,6 +94,11 @@
   lat: 46.7034
   lon: 8.8509
 
+- name: Läntahütte
+  region: Grisons
+  lat: 46.5415
+  lon: 9.0419
+
 # Basilea
 - name: Basel
   region: Basilea
