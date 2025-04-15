@@ -150,7 +150,9 @@ class Database:
 
     def get_activity_summary(self, interval: str) -> list[str]:
         if interval not in VALID_SUMMARY_INTERVALS:
-            raise ValueError(f"Invalid interval: {interval}. Must be one of {VALID_SUMMARY_INTERVALS}")
+            raise ValueError(
+                f"Invalid interval: {interval}. Must be one of {VALID_SUMMARY_INTERVALS}"
+            )
         sql = f"""
             SELECT activity_type, COUNT(*) AS count
             FROM activity_{self._table_suffix}
@@ -160,8 +162,7 @@ class Database:
         """
         results = self._select(sql)
         formatted_results = [
-            f'{row["activity_type"]}: {row["count"]}'
-            for row in results
+            f'{row["activity_type"]}: {row["count"]}' for row in results
         ]
         return formatted_results
 

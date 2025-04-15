@@ -61,7 +61,6 @@ def main():
 
     args = parser.parse_args()
 
-
     logger.setLevel(args.log_level)
 
     with open('stations.yaml', 'r') as file:

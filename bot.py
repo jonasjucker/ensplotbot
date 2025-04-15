@@ -126,7 +126,7 @@ class PlotBot:
             user_id=user_id,
             station="unknown",
         )
-    
+
     async def _stats(self, update: Update, context: CallbackContext):
         user_id = update.message.chat_id
         if user_id != self._admin_id:
@@ -144,7 +144,6 @@ class PlotBot:
             activity_summary_text.append('')
         activity_summary_text = "\n".join(activity_summary_text)
         await update.message.reply_markdown(activity_summary_text)
-
 
     async def _overview_locations(self, update: Update,
                                   context: CallbackContext):

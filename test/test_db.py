@@ -76,11 +76,10 @@ def test_log_activity(db_instance, interval):
     expected_result = ['send-plot: 3', 'login: 2', 'bot-error: 1']
     assert result == expected_result
 
+
 def test_log_activity_invalid_interval(db_instance):
     with pytest.raises(ValueError):
         db_instance.get_activity_summary("INVALID_INTERVAL")
-
-
 
 
 def test_stations_with_subscribers(db_instance):
