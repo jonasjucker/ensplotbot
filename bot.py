@@ -15,15 +15,15 @@ class PlotBot:
         self._admin_id = admin_id
         self.app = Application.builder().token(token).build()
         self._db = db
-        self._station_names = sorted([station["name"] for station in station_config])
+        self._station_names = sorted(
+            [station["name"] for station in station_config])
         self._region_of_stations = {
             station["name"]: station["region"]
             for station in station_config
         }
-        self._station_regions = sorted({
-            station["region"]
-            for station in station_config
-        })
+        self._station_regions = sorted(
+            {station["region"]
+             for station in station_config})
         self._subscriptions = {
             station: set()
             for station in self._station_names
@@ -214,9 +214,10 @@ class PlotBot:
 
         # Only include stations that the user has already subscribed to
         subscription_present = await self._send_station_keyboard(
-            update, sorted([
-                name
-                for name in self._station_names if name in subscribed_stations
+            update,
+            sorted([
+                name for name in self._station_names
+                if name in subscribed_stations
             ]))
 
         return UNSUBSCRIBE if subscription_present else ConversationHandler.END
@@ -263,7 +264,7 @@ class PlotBot:
         return ConversationHandler.END
 
     async def _subscribe_for_station(self, update: Update,
-                               context: CallbackContext) -> int:
+                                     context: CallbackContext) -> int:
         user = update.message.from_user
         msg_text = update.message.text
         reply_text = f"You sucessfully subscribed for {msg_text}. You will receive your first plots in a minute or two..."
