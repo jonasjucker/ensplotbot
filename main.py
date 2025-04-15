@@ -31,7 +31,7 @@ def run_asyncio_in_thread(func, name, *args):
 
 
 def start_bot(token, station_config, admin_id, db):
-    bot = PlotBot(token, station_config, admin_id, db)
+    bot = PlotBot(token, station_config, admin_id=admin_id, db=db)
     run_asyncio_in_thread(bot.connect, 'bot-connect')
     return bot
 
@@ -70,7 +70,10 @@ def main():
 
     db = Database('config.yml')
 
-    bot = start_bot(args.bot_token, station_config, args.admin_id, db)
+    bot = start_bot(args.bot_token,
+                    station_config,
+                    args.admin_id,
+                    db)
 
     ecmwf = EcmwfApi(station_config)
     ecmwf.override_base_time_from_init()
