@@ -9,6 +9,7 @@ import asyncio
 from ecmwf import EcmwfApi
 from bot import PlotBot
 from logger_config import logger
+from db import Database
 
 
 async def await_func(func, *args):
@@ -29,8 +30,8 @@ def run_asyncio_in_thread(func, name, *args):
     logging.debug(f'Started thread: {name}')
 
 
-def start_bot(token, station_config, backup, admin_id):
-    bot = PlotBot(token, station_config, backup, admin_id)
+def start_bot(token, station_config, admin_id, db):
+    bot = PlotBot(token, station_config, admin_id, db)
     run_asyncio_in_thread(bot.connect, 'bot-connect')
     return bot
 
@@ -43,11 +44,6 @@ def main():
                         dest='bot_token', \
                         type=str, \
                         help='unique token of bot (KEEP PRIVATE!)')
-    parser.add_argument('--bot_backup',
-                        dest='bot_backup', \
-                        type=str, \
-                        default='backup',
-                        help='Backup folder for the bot')
 
     parser.add_argument('--admin_id',
                         dest='admin_id', \
@@ -72,8 +68,12 @@ def main():
     with open('stations.yaml', 'r') as file:
         station_config = yaml.safe_load(file)
 
-    bot = start_bot(args.bot_token, station_config, args.bot_backup,
-                    args.admin_id)
+    db = Database('config.yml')
+
+    bot = start_bot(args.bot_token,
+                    station_config,
+                    args.admin_id,
+                    db)
 
     ecmwf = EcmwfApi(station_config)
     ecmwf.override_base_time_from_init()
@@ -95,12 +95,16 @@ def main():
                     ecmwf.download_plots(bot.stations_of_one_time_request()))
             run_asyncio_in_thread(
                 bot.broadcast, 'broadcast',
-                ecmwf.download_latest_plots(bot.stations_with_subscribers()))
+                ecmwf.download_latest_plots(db.stations_with_subscribers()))
             ecmwf.cache_plots()
         except Exception as e:
             logger.error(f'An error occured: {e}')
             sys.exit(1)
 
+        # each day at 00:00 UTC
+        if time.strftime('%H:%M') == '00:00':
+            logger.info(db.get_activity_summary())
+            time.sleep(60)  # wait for the next minute to avoid double logging
         snooze = 5
         logger.debug(f'snooze {snooze}s ...')
         time.sleep(snooze)

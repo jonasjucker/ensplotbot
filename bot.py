@@ -10,10 +10,11 @@ from constants import TIMEOUT_IN_SEC, STATION_SELECT_ONE_TIME, STATION_SELECT_SU
 
 class PlotBot:
 
-    def __init__(self, token, station_config, backup, admin_id=None):
+    def __init__(self, token, station_config, db=None, admin_id=None):
 
         self._admin_id = admin_id
         self.app = Application.builder().token(token).build()
+        self._db = db
         self._station_names = [station["name"] for station in station_config]
         self._region_of_stations = {
             station["name"]: station["region"]
@@ -47,11 +48,6 @@ class PlotBot:
         # filter for meaningful messages that are explicitly handled by the bot
         # inverse of all filters above
         self._filter_meaningful_messages = ~self._filter_all_commands & ~self._filter_regions & ~self._filter_stations
-
-        [
-            self.app.bot_data.setdefault(station, set())
-            for station in self._station_names
-        ]
 
         self.app.add_handler(CommandHandler('start', self._help))
         self.app.add_handler(CommandHandler('help', self._help))
@@ -117,7 +113,6 @@ class PlotBot:
         await self.app.updater.start_polling(allowed_updates=Update.ALL_TYPES)
         await self.app.start()
         logger.info('Bot connected')
-        logger.info(self._collect_bot_data(short=True))
 
         while True:
             await asyncio.sleep(1)
@@ -160,12 +155,6 @@ class PlotBot:
 
         await update.message.reply_markdown(greetings)
 
-    def _get_subscriptions_of_user(self, user_id, context) -> list[str]:
-        return [
-            station for station, users in context.bot_data.items()
-            if user_id in users
-        ]
-
     async def _choose_station(self, update: Update,
                               context: CallbackContext) -> int:
         region = update.message.text
@@ -174,7 +163,7 @@ class PlotBot:
         user_id = update.message.chat_id
 
         # Get the stations that the user has already subscribed to
-        subscribed_stations = self._get_subscriptions_of_user(user_id, context)
+        subscribed_stations = self._db.get_subscriptions_by_user(user_id)
 
         # Only include stations that the user has not already subscribed to
         not_subscribed_for_all_stations = await self._send_station_keyboard(
@@ -221,7 +210,7 @@ class PlotBot:
         user_id = update.message.chat_id
 
         # Get the stations that the user has already subscribed to
-        subscribed_stations = self._get_subscriptions_of_user(user_id, context)
+        subscribed_stations = self._db.get_subscriptions_by_user(user_id)
 
         # Only include stations that the user has already subscribed to
         subscription_present = await self._send_station_keyboard(
@@ -262,24 +251,19 @@ class PlotBot:
                                        context: CallbackContext) -> int:
         user = update.message.from_user
         msg_text = update.message.text
+        self._db.remove_subscription(msg_text, user.id)
+
         reply_text = f'Unubscribed for Station {msg_text}'
         await update.message.reply_text(
             reply_text,
             reply_markup=ReplyKeyboardRemove(),
         )
-        self._revoke_subscription(user.id, msg_text, context.bot_data)
         logger.info(f' {user.first_name} unsubscribed for Station {msg_text}')
 
         return ConversationHandler.END
 
-    async def _log_stats_and_send_to_admin(self):
-        stats = self._collect_bot_data()
-        logger.info(stats)
-        if self._admin_id:
-            await self.app.bot.send_message(chat_id=self._admin_id, text=stats)
-
     async def _subscribe_for_station(self, update: Update,
-                                     context: CallbackContext) -> int:
+                               context: CallbackContext) -> int:
         user = update.message.from_user
         msg_text = update.message.text
         reply_text = f"You sucessfully subscribed for {msg_text}. You will receive your first plots in a minute or two..."
@@ -287,12 +271,16 @@ class PlotBot:
             reply_text,
             reply_markup=ReplyKeyboardRemove(),
         )
-        logger.info(context.bot_data)
-        self._register_subscription(user.id, msg_text, context.bot_data)
+        self._db.add_subscription(msg_text, user.id)
+        self._subscriptions[msg_text].add(user.id)
 
         logger.info(f' {user.first_name} subscribed for Station {msg_text}')
 
-        await self._log_stats_and_send_to_admin()
+        self._db.log_activity(
+            activity_type="subscription",
+            user_id=user.id,
+            station=msg_text,
+        )
 
         return ConversationHandler.END
 
@@ -310,31 +298,13 @@ class PlotBot:
         logger.info(
             f' {user.first_name} requested forecast for Station {msg_text}')
 
+        self._db.log_activity(
+            activity_type="one-time-request",
+            user_id=user.id,
+            station=msg_text,
+        )
+
         return ConversationHandler.END
-
-    def _register_subscription(self, id, station, bot_data):
-
-        # add user to subscription list for given station
-        bot_data[station].add(id)
-
-        self._subscriptions[station].add(id)
-
-    def _revoke_subscription(self, id, station, bot_data):
-
-        # remove user to subscription list for given station
-        if id in bot_data[station]:
-            bot_data[station].remove(id)
-
-    async def _unsubscribe(self, update: Update, context: CallbackContext):
-        reply_text = "You sucessfully unsubscribed."
-        await update.message.reply_text(reply_text)
-
-        # remove user from subscription list
-        user_id = update.effective_user.id
-        context.bot_data.setdefault('user_id',
-                                    set())  # create key if not present
-        if user_id in context.bot_data['user_id']:
-            context.bot_data['user_id'].remove(user_id)
 
     async def _cancel(self, update: Update, context: CallbackContext) -> int:
         user = update.message.from_user
@@ -397,26 +367,10 @@ class PlotBot:
             for station in self._station_names
         }
 
-    def _collect_bot_data(self, short=False):
-        stats = []
-        stats.append('')
-        for station, users in self.app.bot_data.items():
-            if not short:
-                stats.append(f'{station}: {len(users)}')
-        unique_users = set()
-        for users in self.app.bot_data.values():
-            unique_users.update(users)
-        stats.append(f'Total subscribers: {len(unique_users)}')
-        stats_str = "\n".join(stats)
-        return stats_str
-
-    def stations_with_subscribers(self):
-        return sorted(
-            [station for station, users in self.app.bot_data.items() if users])
-
     async def broadcast(self, plots):
         if plots:
             for station_name in plots:
-                for user_id in self.app.bot_data.get(station_name, set()):
+                for user_id in self._db.get_subscriptions_by_station(
+                        station_name):
                     await self._send_plot_to_user(plots, station_name, user_id)
             logger.info('plots sent to all users')
