@@ -3,6 +3,8 @@ import argparse
 import time
 import yaml
 import sys
+import threading
+import asyncio
 
 from ecmwf import EcmwfApi
 from bot import PlotBot
@@ -10,16 +12,27 @@ from logger_config import logger
 from db import Database
 
 
-def stop(bot):
-    bot.stop()
-    sys.exit(1)
+async def await_func(func, *args):
+    async_func = asyncio.create_task(func(*args))
+    await async_func
 
 
-def start_bot(bot, token, station_config, admin_id, db, restart=False):
-    if restart:
-        bot.stop()
+def run_asyncio(func, *args):
+    asyncio.run(await_func(func, *args))
+
+
+def run_asyncio_in_thread(func, name, *args):
+    thread = threading.Thread(target=run_asyncio,
+                              name=name,
+                              daemon=True,
+                              args=[func, *args])
+    thread.start()
+    logging.debug(f'Started thread: {name}')
+
+
+def start_bot(token, station_config, admin_id, db):
     bot = PlotBot(token, station_config, admin_id=admin_id, db=db)
-    bot.connect()
+    run_asyncio_in_thread(bot.connect, 'bot-connect')
     return bot
 
 
@@ -48,6 +61,8 @@ def main():
 
     args = parser.parse_args()
 
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+
     logger.setLevel(args.log_level)
 
     with open('stations.yaml', 'r') as file:
@@ -55,12 +70,7 @@ def main():
 
     db = Database('config.yml')
 
-    bot = start_bot(None,
-                    args.bot_token,
-                    station_config,
-                    args.admin_id,
-                    db=db,
-                    restart=False)
+    bot = start_bot(args.bot_token, station_config, args.admin_id, db)
 
     ecmwf = EcmwfApi(station_config)
     ecmwf.override_base_time_from_init()
@@ -73,31 +83,25 @@ def main():
             ecmwf.upgrade_basetime_global()
             ecmwf.upgrade_basetime_stations()
             if bot.has_new_subscribers_waiting():
-                bot.send_plots_to_new_subscribers(
+                run_asyncio_in_thread(
+                    bot.send_plots_to_new_subscribers, 'new-subscribers',
                     ecmwf.download_plots(bot.stations_of_new_subscribers()))
             if bot.has_one_time_forecast_waiting():
-                bot.send_one_time_forecast(
+                run_asyncio_in_thread(
+                    bot.send_one_time_forecast, 'one-time-forecast',
                     ecmwf.download_plots(bot.stations_of_one_time_request()))
-            bot.broadcast(
+            run_asyncio_in_thread(
+                bot.broadcast, 'broadcast',
                 ecmwf.download_latest_plots(db.stations_with_subscribers()))
             ecmwf.cache_plots()
         except Exception as e:
             logger.error(f'An error occured: {e}')
-            logger.error('Restart required')
-            stop(bot)
-
-        if bot.restart_required():
-            bot = start_bot(bot,
-                            args.bot_token,
-                            station_config,
-                            args.admin_id,
-                            db=db,
-                            restart=True)
-            logger.info('Bot restarted')
+            sys.exit(1)
 
         # each day at 00:00 UTC
         if time.strftime('%H:%M') == '00:00':
             logger.info(db.get_activity_summary())
+            time.sleep(60)  # wait for the next minute to avoid double logging
         snooze = 5
         logger.debug(f'snooze {snooze}s ...')
         time.sleep(snooze)
