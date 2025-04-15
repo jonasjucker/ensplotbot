@@ -119,7 +119,7 @@ class PlotBot:
 
     def _error(self, update: Update, context: CallbackContext):
         logger.error("Exception while handling an update:",
-                     exc_info=context.error)
+                     {context.error})
 
     async def _overview_locations(self, update: Update,
                                   context: CallbackContext):
