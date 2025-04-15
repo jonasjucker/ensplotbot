@@ -70,10 +70,7 @@ def main():
 
     db = Database('config.yml')
 
-    bot = start_bot(args.bot_token,
-                    station_config,
-                    args.admin_id,
-                    db)
+    bot = start_bot(args.bot_token, station_config, args.admin_id, db)
 
     ecmwf = EcmwfApi(station_config)
     ecmwf.override_base_time_from_init()

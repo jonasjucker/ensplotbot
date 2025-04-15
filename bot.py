@@ -263,7 +263,7 @@ class PlotBot:
         return ConversationHandler.END
 
     async def _subscribe_for_station(self, update: Update,
-                               context: CallbackContext) -> int:
+                                     context: CallbackContext) -> int:
         user = update.message.from_user
         msg_text = update.message.text
         reply_text = f"You sucessfully subscribed for {msg_text}. You will receive your first plots in a minute or two..."
