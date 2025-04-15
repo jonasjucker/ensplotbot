@@ -5,7 +5,7 @@ from telegram.ext import (CommandHandler, MessageHandler, Application, filters,
                           ConversationHandler, CallbackContext, ContextTypes)
 
 from logger_config import logger
-from constants import TIMEOUT_IN_SEC, STATION_SELECT_ONE_TIME, STATION_SELECT_SUBSCRIBE, ONE_TIME, SUBSCRIBE, UNSUBSCRIBE
+from constants import TIMEOUT_IN_SEC, STATION_SELECT_ONE_TIME, STATION_SELECT_SUBSCRIBE, ONE_TIME, SUBSCRIBE, UNSUBSCRIBE, VALID_SUMMARY_INTERVALS
 
 
 class PlotBot:
@@ -42,7 +42,7 @@ class PlotBot:
                                              ")$")
         # filter for all commands of bot
         self._filter_all_commands = filters.Regex(
-            "^(/locations|/subscribe|/unsubscribe|/plots|/help|/cancel|/start)$"
+            "^(/locations|/subscribe|/unsubscribe|/plots|/help|/cancel|/start|/stats)$"
         )
 
         # filter for meaningful messages that are explicitly handled by the bot
@@ -52,6 +52,7 @@ class PlotBot:
         self.app.add_handler(CommandHandler('start', self._help))
         self.app.add_handler(CommandHandler('help', self._help))
         self.app.add_handler(CommandHandler('cancel', self._cancel))
+        self.app.add_handler(CommandHandler('stats', self._stats))
         self.app.add_handler(
             CommandHandler('locations', self._overview_locations))
 
@@ -125,6 +126,25 @@ class PlotBot:
             user_id=user_id,
             station="unknown",
         )
+    
+    async def _stats(self, update: Update, context: CallbackContext):
+        user_id = update.message.chat_id
+        if user_id != self._admin_id:
+            await update.message.reply_text(
+                "You are not authorized to view stats.")
+            return
+
+        activity_summary_text = []
+        activity_summary_text.append('*Activity summary*')
+        for interval in VALID_SUMMARY_INTERVALS:
+            activity_summary = self._db.get_activity_summary(interval)
+            activity_summary_text.append(f"_{interval.lower()}_")
+            for activity in activity_summary:
+                activity_summary_text.append(f"- {activity}")
+            activity_summary_text.append('')
+        activity_summary_text = "\n".join(activity_summary_text)
+        await update.message.reply_markdown(activity_summary_text)
+
 
     async def _overview_locations(self, update: Update,
                                   context: CallbackContext):
@@ -265,6 +285,12 @@ class PlotBot:
             reply_markup=ReplyKeyboardRemove(),
         )
         logger.info(f' {user.first_name} unsubscribed for Station {msg_text}')
+
+        self._db.log_activity(
+            activity_type="unsubscription",
+            user_id=user.id,
+            station=msg_text,
+        )
 
         return ConversationHandler.END
 
