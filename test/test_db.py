@@ -6,6 +6,7 @@ import yaml
 # Add the parent directory to the sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from db import Database
+from constants import VALID_SUMMARY_INTERVALS
 
 
 @pytest.fixture(scope="module")
@@ -62,11 +63,23 @@ def test_remove_subscription(db_instance):
     assert result == []
 
 
-def test_log_activity(db_instance):
+@pytest.mark.parametrize('interval', VALID_SUMMARY_INTERVALS)
+def test_log_activity(db_instance, interval):
     db_instance.log_activity("login", 12345, "station1")
-    result = db_instance.get_activity_summary()
-    assert result[0]["activity_type"] == "login"
-    assert result[0]["count"] == 1
+    db_instance.log_activity("login", 12335, "station1")
+    db_instance.log_activity("bot-error", 13345, "unknown")
+    db_instance.log_activity("send-plot", 83345, "station4")
+    db_instance.log_activity("send-plot", 82345, "station4")
+    db_instance.log_activity("send-plot", 84345, "station4")
+    result = db_instance.get_activity_summary(interval)
+    assert len(result) == 3
+    expected_result = ['send-plot: 3', 'login: 2', 'bot-error: 1']
+    assert result == expected_result
+
+
+def test_log_activity_invalid_interval(db_instance):
+    with pytest.raises(ValueError):
+        db_instance.get_activity_summary("INVALID_INTERVAL")
 
 
 def test_stations_with_subscribers(db_instance):

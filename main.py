@@ -61,8 +61,6 @@ def main():
 
     args = parser.parse_args()
 
-    logging.getLogger("httpx").setLevel(logging.WARNING)
-
     logger.setLevel(args.log_level)
 
     with open('stations.yaml', 'r') as file:
@@ -98,10 +96,6 @@ def main():
             logger.error(f'An error occured: {e}')
             sys.exit(1)
 
-        # each day at 00:00 UTC
-        if time.strftime('%H:%M') == '00:00':
-            logger.info(db.get_activity_summary())
-            time.sleep(60)  # wait for the next minute to avoid double logging
         snooze = 5
         logger.debug(f'snooze {snooze}s ...')
         time.sleep(snooze)

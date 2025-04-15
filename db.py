@@ -3,6 +3,7 @@ import psycopg2
 from psycopg2.extras import DictCursor
 from datetime import datetime
 from logger_config import logger
+from constants import VALID_SUMMARY_INTERVALS
 
 
 class Database:
@@ -147,15 +148,23 @@ class Database:
         values = (activity_type, user_id, station, datetime.now())
         self._execute_query_with_value(sql, values)
 
-    def get_activity_summary(self):
+    def get_activity_summary(self, interval: str) -> list[str]:
+        if interval not in VALID_SUMMARY_INTERVALS:
+            raise ValueError(
+                f"Invalid interval: {interval}. Must be one of {VALID_SUMMARY_INTERVALS}"
+            )
         sql = f"""
             SELECT activity_type, COUNT(*) AS count
             FROM activity_{self._table_suffix}
-            WHERE timestamp >= NOW() - INTERVAL '24 HOURS'
+            WHERE timestamp >= NOW() - INTERVAL '{interval}'
             GROUP BY activity_type
             ORDER BY count DESC
         """
-        return self._select(sql)
+        results = self._select(sql)
+        formatted_results = [
+            f'{row["activity_type"]}: {row["count"]}' for row in results
+        ]
+        return formatted_results
 
     def _select(self, sql):
         connection = self._get_db_connection()
