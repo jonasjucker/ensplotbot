@@ -117,9 +117,14 @@ class PlotBot:
         while True:
             await asyncio.sleep(1)
 
-    def _error(self, update: Update, context: CallbackContext):
-        logger.error("Exception while handling an update:",
-                     {context.error})
+    async def _error(self, update: Update, context: CallbackContext):
+        user_id = update.message.chat_id
+        logger.error(f"Exception while handling an update: {context.error}")
+        self._db.log_activity(
+            activity_type="bot-error",
+            user_id=user_id,
+            station="unknown",
+        )
 
     async def _overview_locations(self, update: Update,
                                   context: CallbackContext):

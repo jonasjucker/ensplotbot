@@ -8,3 +8,5 @@ logging.basicConfig(
 
 # Create a named logger
 logger = logging.getLogger("ensplotbot")
+
+logging.getLogger("httpx").setLevel(logging.WARNING)
