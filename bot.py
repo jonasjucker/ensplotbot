@@ -372,8 +372,8 @@ class PlotBot:
             for plot in plots[station_name]:
                 await self.app.bot.send_photo(chat_id=user_id,
                                               photo=open(plot, 'rb'))
-        except:
-            logger.warning(f'Could not send plot to user: {user_id}')
+        except Exception as e:
+            logger.error(f'Error sending plot to user {user_id}: {e}')
 
     async def _send_plots(self, plots, requests):
         for station_name, users in requests.items():
