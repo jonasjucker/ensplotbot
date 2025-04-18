@@ -5,7 +5,10 @@ from telegram.ext import (CommandHandler, MessageHandler, Application, filters,
                           ConversationHandler, CallbackContext, ContextTypes)
 
 from logger_config import logger
-from constants import TIMEOUT_IN_SEC, STATION_SELECT_ONE_TIME, STATION_SELECT_SUBSCRIBE, ONE_TIME, SUBSCRIBE, UNSUBSCRIBE, VALID_SUMMARY_INTERVALS, JOBQUEUE_DELAY, DEFAULT_USER_ID
+
+from constants import (TIMEOUT_IN_SEC, STATION_SELECT_ONE_TIME, 
+STATION_SELECT_SUBSCRIBE, ONE_TIME, SUBSCRIBE, UNSUBSCRIBE, 
+VALID_SUMMARY_INTERVALS, JOBQUEUE_DELAY, DEFAULT_USER_ID, BOT_MAX_RESCHEDULE)
 
 
 class PlotBot:
@@ -138,11 +141,28 @@ class PlotBot:
         self._ecmwf.upgrade_basetime_global()
         self._ecmwf.upgrade_basetime_stations()
 
-    async def _send_plot_from_queue(self, context: CallbackContext):
+    async def _process_request(self, context: CallbackContext):
         job = context.job
-        user_id, station_name = job.data
-        plots = self._ecmwf.download_plots([station_name])
-        await self._send_plot_to_user(plots, station_name, user_id)
+        user_id, station_name, reschedule_count = job.data
+
+        plots = self._ecmwf.download_plots([station_name]).get(station_name, None)
+
+        # plots are available
+        if plots and len(plots) > 0:
+            await self._send_plots_to_user(plots, station_name, user_id)
+        else:
+            if reschedule_count < BOT_MAX_RESCHEDULE:
+                logger.info(
+                    f"Plots not available for {station_name}, rescheduling job.")
+                self.app.job_queue.run_once(self._process_request,
+                                        JOBQUEUE_DELAY,
+                                        data=(user_id, station_name, reschedule_count + 1))
+            else:
+                logger.info(
+                    f"Plots not available for {station_name}, giving up after {BOT_MAX_RESCHEDULE} attempts.")
+                await self.app.bot.send_message(chat_id=user_id,
+                                                text=f"Sorry, no plots available for {station_name} at the moment. Please try again later.") 
+
 
     def start(self):
         logger.info('Starting bot')
@@ -339,9 +359,9 @@ class PlotBot:
         self._db.add_subscription(msg_text, user.id)
 
         logger.info(f' {user.first_name} subscribed for Station {msg_text}')
-        context.job_queue.run_once(self._send_plot_from_queue,
+        context.job_queue.run_once(self._process_request,
                                    JOBQUEUE_DELAY,
-                                   data=(user.id, msg_text))
+                                   data=(user.id, msg_text, 0))
 
         self._db.log_activity(
             activity_type="subscription",
@@ -361,9 +381,9 @@ class PlotBot:
             reply_markup=ReplyKeyboardRemove(),
         )
 
-        context.job_queue.run_once(self._send_plot_from_queue,
+        context.job_queue.run_once(self._process_request,
                                    JOBQUEUE_DELAY,
-                                   data=(user.id, msg_text))
+                                   data=(user.id, msg_text, 0))
         logger.info(
             f' {user.first_name} requested forecast for Station {msg_text}')
 
@@ -386,6 +406,19 @@ class PlotBot:
 
     async def _cache_plots(self, context: CallbackContext):
         self._ecmwf.cache_plots()
+
+    async def _send_plots_to_user(self, plots, station_name, user_id):
+        logger.debug(f'Send plots of {station_name} to user: {user_id}')
+
+        try:
+            await self.app.bot.send_message(chat_id=user_id,
+                                            text=station_name)
+            for plot in plots:
+                logger.debug(f'Plot: {plot}')
+                await self.app.bot.send_photo(chat_id=user_id,
+                                            photo=open(plot, 'rb'))
+        except Exception as e: 
+            logger.error(f'Error sending plots to user {user_id}: {e}')
 
     async def _send_plot_to_user(self, plots, station_name, user_id):
         logger.debug(f'Send plot to user: {user_id}')

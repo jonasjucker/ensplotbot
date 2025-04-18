@@ -110,7 +110,7 @@ class EcmwfApi():
     def _get_from_API_no_retry(self, link, raise_on_error=True):
         return self._get_with_request(link, raise_on_error)
 
-    @retry.retry(tries=10, delay=0.5, logger=None)
+    @retry.retry(tries=3, delay=0.5, logger=None)
     def _get_from_API_retry(self, link, raise_on_error=True):
         return self._get_with_request(link, raise_on_error)
 
