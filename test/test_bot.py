@@ -11,22 +11,21 @@ from bot import PlotBot
 
 @pytest.fixture(scope="module")
 def bot(station_config):
-      config_file = "test_config.yml"
-      config = {
-          "bot": {
-              "token": '9999999999:BBBBBBBRBBBBBBBBBBBBBBBBBBBBBBBBBBB',
-              "admin_ids": [123456789, 987654321],
-          }
-      }
-      # Write the config to a file
-      with open(config_file, "w") as f:
-          yaml.dump(config, f)
+    config_file = "test_config.yml"
+    config = {
+        "bot": {
+            "token": '9999999999:BBBBBBBRBBBBBBBBBBBBBBBBBBBBBBBBBBB',
+            "admin_ids": [123456789, 987654321],
+        }
+    }
+    # Write the config to a file
+    with open(config_file, "w") as f:
+        yaml.dump(config, f)
 
-      yield PlotBot(config_file, station_config)
+    yield PlotBot(config_file, station_config)
 
-      # Clear the test config file after the test
-      os.remove(config_file)
-
+    # Clear the test config file after the test
+    os.remove(config_file)
 
 
 @pytest.fixture(scope="module")

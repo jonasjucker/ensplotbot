@@ -14,16 +14,12 @@ from constants import (TIMEOUT_IN_SEC, STATION_SELECT_ONE_TIME,
 
 class PlotBot:
 
-    def __init__(self,
-                 config_file,
-                 station_config,
-                 db=None,
-                 ecmwf=None):
-
+    def __init__(self, config_file, station_config, db=None, ecmwf=None):
 
         self._config = yaml.safe_load(open(config_file))
         self._admin_ids = self._config['bot'].get('admin_ids', [])
-        self.app = Application.builder().token(self._config['bot']['token']).build()
+        self.app = Application.builder().token(
+            self._config['bot']['token']).build()
         self._db = db
         self._ecmwf = ecmwf
         self._station_names = sorted(

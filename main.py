@@ -35,10 +35,7 @@ def main():
 
     db = Database(config_file)
 
-    bot = PlotBot(config_file,
-                  station_config,
-                  db=db,
-                  ecmwf=ecmwf)
+    bot = PlotBot(config_file, station_config, db=db, ecmwf=ecmwf)
     bot.start()
 
     # we only end up here if the bot had an error
