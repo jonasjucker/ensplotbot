@@ -5,7 +5,7 @@ from telegram.ext import (CommandHandler, MessageHandler, Application, filters,
                           ConversationHandler, CallbackContext, ContextTypes)
 
 from logger_config import logger
-from constants import TIMEOUT_IN_SEC, STATION_SELECT_ONE_TIME, STATION_SELECT_SUBSCRIBE, ONE_TIME, SUBSCRIBE, UNSUBSCRIBE, VALID_SUMMARY_INTERVALS, JOBQUEUE_DELAY
+from constants import TIMEOUT_IN_SEC, STATION_SELECT_ONE_TIME, STATION_SELECT_SUBSCRIBE, ONE_TIME, SUBSCRIBE, UNSUBSCRIBE, VALID_SUMMARY_INTERVALS, JOBQUEUE_DELAY, DEFAULT_USER_ID
 
 
 class PlotBot:
@@ -132,11 +132,9 @@ class PlotBot:
         )
 
     async def _override_basetime(self, context: CallbackContext):
-        logger.info('Overriding basetime')
         self._ecmwf.override_base_time_from_init()
 
     async def _update_basetime(self, context: CallbackContext):
-        logger.info('Updating basetime')
         self._ecmwf.upgrade_basetime_global()
         self._ecmwf.upgrade_basetime_stations()
 
@@ -151,13 +149,17 @@ class PlotBot:
         self.app.run_polling(allowed_updates=Update.ALL_TYPES)
 
     async def _error(self, update: Update, context: CallbackContext):
-        #user_id = update.message.chat_id
+
+        if update:
+            user_id = update.message.chat_id
+        else:
+            user_id = DEFAULT_USER_ID
         logger.error(f"Exception while handling an update: {context.error}")
-        #self._db.log_activity(
-        #    activity_type="bot-error",
-        #    user_id=user_id,
-        #    station="unknown",
-        #)
+        self._db.log_activity(
+            activity_type="bot-error",
+            user_id=user_id,
+            station="unknown",
+        )
 
     async def _stats(self, update: Update, context: CallbackContext):
         user_id = update.message.chat_id
