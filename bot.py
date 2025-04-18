@@ -8,8 +8,9 @@ from logger_config import logger
 
 from constants import (TIMEOUT_IN_SEC, STATION_SELECT_ONE_TIME,
                        STATION_SELECT_SUBSCRIBE, ONE_TIME, SUBSCRIBE,
-                       UNSUBSCRIBE, VALID_SUMMARY_INTERVALS, BOT_JOBQUEUE_DELAY,
-                       BOT_DEFAULT_USER_ID, BOT_MAX_RESCHEDULE_TIME)
+                       UNSUBSCRIBE, VALID_SUMMARY_INTERVALS,
+                       BOT_JOBQUEUE_DELAY, BOT_DEFAULT_USER_ID,
+                       BOT_MAX_RESCHEDULE_TIME)
 
 
 class PlotBot:
@@ -154,8 +155,7 @@ class PlotBot:
             job.schedule_removal()
         else:
             logger.info(
-                f"Plots not available for {station_name}, rescheduling job."
-            )
+                f"Plots not available for {station_name}, rescheduling job.")
 
     def start(self):
         logger.info('Starting bot')
@@ -351,7 +351,8 @@ class PlotBot:
         )
         self._db.add_subscription(msg_text, user.id)
 
-        self._schedule_process_request(f"subscription_{msg_text}_{user.id}", data=(user.id, msg_text))
+        self._schedule_process_request(f"subscription_{msg_text}_{user.id}",
+                                       data=(user.id, msg_text))
         logger.info(f' {user.first_name} subscribed for Station {msg_text}')
 
         self._db.log_activity(
@@ -364,11 +365,11 @@ class PlotBot:
 
     def _schedule_process_request(self, job_name, data):
         self.app.job_queue.run_repeating(self._process_request,
-                                        first = BOT_JOBQUEUE_DELAY,
-                                        interval = 60,
-                                        last = BOT_MAX_RESCHEDULE_TIME,
-                                        name=job_name,
-                                        data=data)
+                                         first=BOT_JOBQUEUE_DELAY,
+                                         interval=60,
+                                         last=BOT_MAX_RESCHEDULE_TIME,
+                                         name=job_name,
+                                         data=data)
         logger.debug(f"Scheduled job {job_name} with data {data}")
 
     async def _request_one_time_forecast_for_station(
@@ -381,7 +382,9 @@ class PlotBot:
             reply_markup=ReplyKeyboardRemove(),
         )
 
-        self._schedule_process_request(f"one_time_forecast_{msg_text}_{user.id}", data=(user.id, msg_text))
+        self._schedule_process_request(
+            f"one_time_forecast_{msg_text}_{user.id}",
+            data=(user.id, msg_text))
         logger.info(
             f' {user.first_name} requested forecast for Station {msg_text}')
 
@@ -427,5 +430,6 @@ class PlotBot:
                 else:
                     for user_id in self._db.get_subscriptions_by_station(
                             station_name):
-                        await self._send_plots_to_user(plots, station_name, user_id)
+                        await self._send_plots_to_user(plots, station_name,
+                                                       user_id)
                     logger.info(f'Broadcasted {station_name}')
