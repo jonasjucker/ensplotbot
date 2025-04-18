@@ -9,14 +9,27 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from bot import PlotBot
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def bot(station_config):
-    from bot import PlotBot
-    token = '9999999999:BBBBBBBRBBBBBBBBBBBBBBBBBBBBBBBBBBB'
-    return PlotBot(token, station_config)
+      config_file = "test_config.yml"
+      config = {
+          "bot": {
+              "token": '9999999999:BBBBBBBRBBBBBBBBBBBBBBBBBBBBBBBBBBB',
+              "admin_ids": [123456789, 987654321],
+          }
+      }
+      # Write the config to a file
+      with open(config_file, "w") as f:
+          yaml.dump(config, f)
+
+      yield PlotBot(config_file, station_config)
+
+      # Clear the test config file after the test
+      os.remove(config_file)
 
 
-@pytest.fixture
+
+@pytest.fixture(scope="module")
 def station_config():
     stations = """
 - name: Zürich
