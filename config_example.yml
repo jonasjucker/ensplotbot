@@ -1,0 +1,11 @@
+# store this file as config.yml in the same directory as your bot script
+db:
+  host: "your-database-host.com"
+  user: "your_database_user"
+  password: "your_secure_password"
+  database: "your_database_name"
+  port: 5432
+  table_suffix: "your_table_suffix"
+bot:
+  token: "123456789:ABCDEF1234567890abcdef1234567890"
+  admin_ids: [123456789, 987654321]
