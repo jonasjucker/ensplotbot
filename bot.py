@@ -5,16 +5,22 @@ from telegram.ext import (CommandHandler, MessageHandler, Application, filters,
                           ConversationHandler, CallbackContext, ContextTypes)
 
 from logger_config import logger
-from constants import TIMEOUT_IN_SEC, STATION_SELECT_ONE_TIME, STATION_SELECT_SUBSCRIBE, ONE_TIME, SUBSCRIBE, UNSUBSCRIBE, VALID_SUMMARY_INTERVALS
+from constants import TIMEOUT_IN_SEC, STATION_SELECT_ONE_TIME, STATION_SELECT_SUBSCRIBE, ONE_TIME, SUBSCRIBE, UNSUBSCRIBE, VALID_SUMMARY_INTERVALS, JOBQUEUE_DELAY, DEFAULT_USER_ID
 
 
 class PlotBot:
 
-    def __init__(self, token, station_config, db=None, admin_id=None):
+    def __init__(self,
+                 token,
+                 station_config,
+                 db=None,
+                 admin_id=None,
+                 ecmwf=None):
 
         self._admin_id = admin_id
         self.app = Application.builder().token(token).build()
         self._db = db
+        self._ecmwf = ecmwf
         self._station_names = sorted(
             [station["name"] for station in station_config])
         self._region_of_stations = {
@@ -24,14 +30,6 @@ class PlotBot:
         self._station_regions = sorted(
             {station["region"]
              for station in station_config})
-        self._subscriptions = {
-            station: set()
-            for station in self._station_names
-        }
-        self._one_time_forecast_requests = {
-            station: set()
-            for station in self._station_names
-        }
         # filter for stations
         self._filter_stations = filters.Regex("^(" +
                                               "|".join(self._station_names) +
@@ -109,17 +107,53 @@ class PlotBot:
         self.app.add_handler(one_time_forecast_handler)
         self.app.add_error_handler(self._error)
 
-    async def connect(self):
-        await self.app.initialize()
-        await self.app.updater.start_polling(allowed_updates=Update.ALL_TYPES)
-        await self.app.start()
-        logger.info('Bot connected')
+        self.app.job_queue.run_once(
+            self._override_basetime,
+            when=0,
+            name='Override basetime',
+        )
+        self.app.job_queue.run_repeating(
+            self._update_basetime,
+            interval=60,
+            first=60,
+            name='Update basetime',
+        )
+        self.app.job_queue.run_repeating(
+            self._cache_plots,
+            interval=30,
+            first=30,
+            name='Cache plots',
+        )
+        self.app.job_queue.run_repeating(
+            self._broadcast_from_queue,
+            interval=90,
+            first=60,
+            name='Broadcast',
+        )
 
-        while True:
-            await asyncio.sleep(1)
+    async def _override_basetime(self, context: CallbackContext):
+        self._ecmwf.override_base_time_from_init()
+
+    async def _update_basetime(self, context: CallbackContext):
+        self._ecmwf.upgrade_basetime_global()
+        self._ecmwf.upgrade_basetime_stations()
+
+    async def _send_plot_from_queue(self, context: CallbackContext):
+        job = context.job
+        user_id, station_name = job.data
+        plots = self._ecmwf.download_plots([station_name])
+        await self._send_plot_to_user(plots, station_name, user_id)
+
+    def start(self):
+        logger.info('Starting bot')
+        self.app.run_polling(allowed_updates=Update.ALL_TYPES)
 
     async def _error(self, update: Update, context: CallbackContext):
-        user_id = update.message.chat_id
+
+        if update:
+            user_id = update.message.chat_id
+        else:
+            user_id = DEFAULT_USER_ID
         logger.error(f"Exception while handling an update: {context.error}")
         self._db.log_activity(
             activity_type="bot-error",
@@ -303,9 +337,11 @@ class PlotBot:
             reply_markup=ReplyKeyboardRemove(),
         )
         self._db.add_subscription(msg_text, user.id)
-        self._subscriptions[msg_text].add(user.id)
 
         logger.info(f' {user.first_name} subscribed for Station {msg_text}')
+        context.job_queue.run_once(self._send_plot_from_queue,
+                                   JOBQUEUE_DELAY,
+                                   data=(user.id, msg_text))
 
         self._db.log_activity(
             activity_type="subscription",
@@ -324,8 +360,10 @@ class PlotBot:
             reply_text,
             reply_markup=ReplyKeyboardRemove(),
         )
-        self._one_time_forecast_requests[msg_text].add(user.id)
 
+        context.job_queue.run_once(self._send_plot_from_queue,
+                                   JOBQUEUE_DELAY,
+                                   data=(user.id, msg_text))
         logger.info(
             f' {user.first_name} requested forecast for Station {msg_text}')
 
@@ -346,24 +384,8 @@ class PlotBot:
 
         return ConversationHandler.END
 
-    def has_new_subscribers_waiting(self):
-        return any(users for users in self._subscriptions.values())
-
-    def has_one_time_forecast_waiting(self):
-        return any(users
-                   for users in self._one_time_forecast_requests.values())
-
-    def stations_of_one_time_request(self):
-        return [
-            station
-            for station, users in self._one_time_forecast_requests.items()
-            if users
-        ]
-
-    def stations_of_new_subscribers(self):
-        return [
-            station for station, users in self._subscriptions.items() if users
-        ]
+    async def _cache_plots(self, context: CallbackContext):
+        self._ecmwf.cache_plots()
 
     async def _send_plot_to_user(self, plots, station_name, user_id):
         logger.debug(f'Send plot to user: {user_id}')
@@ -375,30 +397,9 @@ class PlotBot:
         except Exception as e:
             logger.error(f'Error sending plot to user {user_id}: {e}')
 
-    async def _send_plots(self, plots, requests):
-        for station_name, users in requests.items():
-            for user_id in users:
-                await self._send_plot_to_user(plots, station_name, user_id)
-
-    async def send_plots_to_new_subscribers(self, plots):
-        await self._send_plots(plots, self._subscriptions)
-        logger.info('plots sent to new subscribers')
-
-        self._subscriptions = {
-            station: set()
-            for station in self._station_names
-        }
-
-    async def send_one_time_forecast(self, plots):
-        await self._send_plots(plots, self._one_time_forecast_requests)
-        logger.info('plots sent to one time forecast requests')
-
-        self._one_time_forecast_requests = {
-            station: set()
-            for station in self._station_names
-        }
-
-    async def broadcast(self, plots):
+    async def _broadcast_from_queue(self, context: CallbackContext):
+        plots = self._ecmwf.download_latest_plots(
+            self._db.stations_with_subscribers())
         if plots:
             for station_name in plots:
                 for user_id in self._db.get_subscriptions_by_station(
