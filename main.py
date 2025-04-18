@@ -8,6 +8,7 @@ from bot import PlotBot
 from logger_config import logger
 from db import Database
 
+
 def main():
 
     parser = argparse.ArgumentParser()
@@ -42,7 +43,11 @@ def main():
 
     db = Database('config.yml')
 
-    bot = PlotBot(args.bot_token, station_config, admin_id=args.admin_id, db=db, ecmwf=ecmwf)
+    bot = PlotBot(args.bot_token,
+                  station_config,
+                  admin_id=args.admin_id,
+                  db=db,
+                  ecmwf=ecmwf)
     bot.start()
 
     # we should not be here

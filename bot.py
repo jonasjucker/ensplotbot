@@ -10,7 +10,12 @@ from constants import TIMEOUT_IN_SEC, STATION_SELECT_ONE_TIME, STATION_SELECT_SU
 
 class PlotBot:
 
-    def __init__(self, token, station_config, db=None, admin_id=None, ecmwf=None):
+    def __init__(self,
+                 token,
+                 station_config,
+                 db=None,
+                 admin_id=None,
+                 ecmwf=None):
 
         self._admin_id = admin_id
         self.app = Application.builder().token(token).build()
@@ -102,21 +107,29 @@ class PlotBot:
         self.app.add_handler(one_time_forecast_handler)
         self.app.add_error_handler(self._error)
 
-        self.app.job_queue.run_once(self._override_basetime,
-                                   when=0,
-                                   name='Override basetime',)
-        self.app.job_queue.run_repeating(self._update_basetime,
-                                        interval=60,
-                                        first=60,
-                                        name='Update basetime',)
-        self.app.job_queue.run_repeating(self._cache_plots,
-                                        interval=30,
-                                        first=30,
-                                        name='Cache plots',)
-        self.app.job_queue.run_repeating(self._broadcast_from_queue,
-                                        interval=90,
-                                        first=60,
-                                        name='Broadcast',)
+        self.app.job_queue.run_once(
+            self._override_basetime,
+            when=0,
+            name='Override basetime',
+        )
+        self.app.job_queue.run_repeating(
+            self._update_basetime,
+            interval=60,
+            first=60,
+            name='Update basetime',
+        )
+        self.app.job_queue.run_repeating(
+            self._cache_plots,
+            interval=30,
+            first=30,
+            name='Cache plots',
+        )
+        self.app.job_queue.run_repeating(
+            self._broadcast_from_queue,
+            interval=90,
+            first=60,
+            name='Broadcast',
+        )
 
     async def _override_basetime(self, context: CallbackContext):
         logger.info('Overriding basetime')
@@ -324,7 +337,9 @@ class PlotBot:
         self._db.add_subscription(msg_text, user.id)
 
         logger.info(f' {user.first_name} subscribed for Station {msg_text}')
-        context.job_queue.run_once(self._send_plot_from_queue, JOBQUEUE_DELAY, data=(user.id, msg_text))
+        context.job_queue.run_once(self._send_plot_from_queue,
+                                   JOBQUEUE_DELAY,
+                                   data=(user.id, msg_text))
 
         self._db.log_activity(
             activity_type="subscription",
@@ -344,7 +359,9 @@ class PlotBot:
             reply_markup=ReplyKeyboardRemove(),
         )
 
-        context.job_queue.run_once(self._send_plot_from_queue, JOBQUEUE_DELAY, data=(user.id, msg_text))
+        context.job_queue.run_once(self._send_plot_from_queue,
+                                   JOBQUEUE_DELAY,
+                                   data=(user.id, msg_text))
         logger.info(
             f' {user.first_name} requested forecast for Station {msg_text}')
 
@@ -379,7 +396,8 @@ class PlotBot:
             logger.error(f'Error sending plot to user {user_id}: {e}')
 
     async def _broadcast_from_queue(self, context: CallbackContext):
-        plots = self._ecmwf.download_latest_plots(self._db.stations_with_subscribers())
+        plots = self._ecmwf.download_latest_plots(
+            self._db.stations_with_subscribers())
         if plots:
             for station_name in plots:
                 for user_id in self._db.get_subscriptions_by_station(
