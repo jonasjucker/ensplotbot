@@ -1,5 +1,4 @@
-import asyncio
-
+import yaml
 from telegram import ReplyKeyboardMarkup, Update, ReplyKeyboardRemove
 from telegram.ext import (CommandHandler, MessageHandler, Application, filters,
                           ConversationHandler, CallbackContext, ContextTypes)
@@ -15,15 +14,12 @@ from constants import (TIMEOUT_IN_SEC, STATION_SELECT_ONE_TIME,
 
 class PlotBot:
 
-    def __init__(self,
-                 token,
-                 station_config,
-                 db=None,
-                 admin_id=None,
-                 ecmwf=None):
+    def __init__(self, config_file, station_config, db=None, ecmwf=None):
 
-        self._admin_id = admin_id
-        self.app = Application.builder().token(token).build()
+        self._config = yaml.safe_load(open(config_file))
+        self._admin_ids = self._config['bot'].get('admin_ids', [])
+        self.app = Application.builder().token(
+            self._config['bot']['token']).build()
         self._db = db
         self._ecmwf = ecmwf
         self._station_names = sorted(
@@ -176,7 +172,7 @@ class PlotBot:
 
     async def _stats(self, update: Update, context: CallbackContext):
         user_id = update.message.chat_id
-        if user_id != self._admin_id:
+        if user_id not in self._admin_ids:
             await update.message.reply_text(
                 "You are not authorized to view stats.")
             return

@@ -20,9 +20,10 @@ To run the bot, follow these steps:
     ```sh
     pip install -r requirements.txt
     ```
-3. Run the bot:
+3. Create a config file __config.yml__ for secrets like database access and bot token, see [config_example.yml](config_example.yml) as reference.
+4. Run the bot:
     ```sh
-    python main.py --bot_token YOUR_SECRET_BOT_TOKEN --bot_backup $(pwd)/backup --log_level 10
+    python main.py --log_level 10
     ```
 
 ## Adding a new location

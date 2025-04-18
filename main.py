@@ -13,16 +13,6 @@ def main():
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--bot_token', \
-                        dest='bot_token', \
-                        type=str, \
-                        help='unique token of bot (KEEP PRIVATE!)')
-
-    parser.add_argument('--admin_id',
-                        dest='admin_id', \
-                        type=int, \
-                        help='Telegram ID of the admin')
-
     parser.add_argument(
         '--log_level',
         dest='log_level',
@@ -41,16 +31,14 @@ def main():
 
     ecmwf = EcmwfApi(station_config)
 
-    db = Database('config.yml')
+    config_file = 'config.yml'
 
-    bot = PlotBot(args.bot_token,
-                  station_config,
-                  admin_id=args.admin_id,
-                  db=db,
-                  ecmwf=ecmwf)
+    db = Database(config_file)
+
+    bot = PlotBot(config_file, station_config, db=db, ecmwf=ecmwf)
     bot.start()
 
-    # we should not be here
+    # we only end up here if the bot had an error
     sys.exit(1)
 
 
