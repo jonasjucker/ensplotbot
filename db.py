@@ -42,34 +42,6 @@ class Database:
                     CREATE TABLE IF NOT EXISTS subscriptions_{self._table_suffix} (
                         id SERIAL PRIMARY KEY,
                         station TEXT NOT NULL,
-                        user_id VARCHAR(50) NOT NULL
-                    )
-                """)
-            connection.commit()
-        except Exception as e:
-            logger.error(f"{e} while creating tables")
-        finally:
-            connection.close()
-
-    def _create_tables(self):
-        connection = self._get_db_connection()
-        try:
-            with connection.cursor() as cursor:
-                cursor.execute(f"""
-                    CREATE TABLE IF NOT EXISTS activity_{self._table_suffix} (
-                        id SERIAL PRIMARY KEY,
-                        activity_type VARCHAR(50) NOT NULL,
-                        user_id VARCHAR(50) NOT NULL,
-                        station TEXT,
-                        timestamp TIMESTAMP NOT NULL
-                    )
-                """)
-
-                # subscriptions table
-                cursor.execute(f"""
-                    CREATE TABLE IF NOT EXISTS subscriptions_{self._table_suffix} (
-                        id SERIAL PRIMARY KEY,
-                        station TEXT NOT NULL,
                         user_id BIGINT NOT NULL,
                         UNIQUE (station, user_id)
                     )
@@ -128,6 +100,23 @@ class Database:
                 [subscription['user_id'] for subscription in subscriptions])
         else:
             return []
+
+    def count_unique_subscribers(self) -> list[int]:
+        sql = f"""
+            SELECT DISTINCT user_id
+            FROM subscriptions_{self._table_suffix}
+        """
+        subscribers = self._select(sql)
+        return len([subscriber['user_id'] for subscriber in subscribers])
+
+    def get_subscription_summary(self) -> list[str]:
+        stations = self.stations_with_subscribers()
+        summary = []
+        for station in stations:
+            summary.append(
+                f"{station}: {len(self.get_subscriptions_by_station(station))}"
+            )
+        return summary
 
     def _select_with_values(self, sql, values):
         connection = self._get_db_connection()

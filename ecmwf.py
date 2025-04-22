@@ -122,13 +122,10 @@ class EcmwfApi():
         if not result.ok and raise_on_error:
             raise ValueError('Request failed for {}'.format(get))
         else:
-            if result.status_code == 403:
-                raise ValueError('403 Forbidden for {}'.format(get))
-            else:
-                try:
-                    return result.json()
-                except json.decoder.JSONDecodeError:
-                    raise ValueError('JSONDecodeError for {}'.format(get))
+            try:
+                return result.json()
+            except json.decoder.JSONDecodeError:
+                raise ValueError('JSONDecodeError for {}'.format(get))
 
     def _get_API_data_for_epsgram(self,
                                   station,
