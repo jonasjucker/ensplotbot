@@ -10,3 +10,5 @@ logging.basicConfig(
 logger = logging.getLogger("ensplotbot")
 
 logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("apscheduler").setLevel(logging.WARNING)
+logging.getLogger("telegram.ext.Application").setLevel(logging.WARNING)
