@@ -108,6 +108,7 @@ def test_get_subscriptions_by_station(db_instance):
     users = db_instance.get_subscriptions_by_station("station3")
     assert users == []
 
+
 def test_subscription_summary(db_instance):
     # Add test data
     db_instance.add_subscription("station1", 12345)
@@ -117,6 +118,7 @@ def test_subscription_summary(db_instance):
     summary = db_instance.get_subscription_summary()
 
     assert summary == ["station1: 2", "station2: 1"]
+
 
 def test_get_unique_subscribers(db_instance):
     # Add test data
