@@ -178,13 +178,28 @@ class PlotBot:
             return
 
         activity_summary_text = []
-        activity_summary_text.append('*Activity summary*')
+        
+        # Query activity summary for each interval
+        activity_summary_text.append('*Activity*')
         for interval in VALID_SUMMARY_INTERVALS:
             activity_summary = self._db.get_activity_summary(interval)
             activity_summary_text.append(f"_{interval.lower()}_")
             for activity in activity_summary:
                 activity_summary_text.append(f"- {activity}")
             activity_summary_text.append('')
+
+        # Query subscription summary
+        activity_summary_text.append('*Subscriptions*')
+        subscription_summary = self._db.get_subscription_summary()
+        for station in subscription_summary:
+            activity_summary_text.append(f"- {station}")
+        
+        # Query unique subscribers
+        unique_subscribers = self._db.count_unique_subscribers()
+        activity_summary_text.append('')
+        activity_summary_text.append(f"_Unique subscribers: {unique_subscribers}_")
+        activity_summary_text.append('')
+
         activity_summary_text = "\n".join(activity_summary_text)
         await update.message.reply_markdown(activity_summary_text)
 

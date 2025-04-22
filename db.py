@@ -128,6 +128,21 @@ class Database:
                 [subscription['user_id'] for subscription in subscriptions])
         else:
             return []
+    
+    def count_unique_subscribers(self) -> list[int]:
+        sql = f"""
+            SELECT DISTINCT user_id
+            FROM subscriptions_{self._table_suffix}
+        """
+        subscribers = self._select(sql)
+        return len([subscriber['user_id'] for subscriber in subscribers])
+
+    def get_subscription_summary(self) -> list[str]:
+        stations = self.stations_with_subscribers()
+        summary = []
+        for station in stations:
+            summary.append(f"{station}: {len(self.get_subscriptions_by_station(station))}")
+        return summary
 
     def _select_with_values(self, sql, values):
         connection = self._get_db_connection()
