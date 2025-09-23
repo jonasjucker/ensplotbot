@@ -271,6 +271,11 @@
   lat: 43.4138
   lon: 4.73202
 
+- name: Biscarrosse
+  region: France
+  lat: 44.3945
+  lon: -1.16721
+
 # Japan
 - name: Niseko
   api_name: Niseko+Town
